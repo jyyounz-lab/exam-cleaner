@@ -2,6 +2,7 @@ import * as ort from 'onnxruntime-web/wasm';
 import wasmModuleUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs?url';
 import wasmBinaryUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
 import { sauvola } from './core';
+import { refineInk } from './refine';
 ort.env.wasm.wasmPaths = { mjs: wasmModuleUrl, wasm: wasmBinaryUrl };
 ort.env.wasm.numThreads = 1;
 let session: ort.InferenceSession | undefined;
@@ -39,6 +40,8 @@ self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
       done++; progress(8 + Math.round(done / total * 91), `AI 分析中：${done}／${total} 個區塊`);
     }
     for (let i = 0; i < n; i++) { handwriting[i] /= weights[i] || 1; print[i] /= weights[i] || 1; }
-    self.postMessage({ type: 'result', handwriting, print, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer]);
+    progress(99, '正在補齊筆畫、辨識答案區與保護底線…');
+    const hints = refineInk(image, { handwriting, print }, binary);
+    self.postMessage({ type: 'result', handwriting, print, hints, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.structure.buffer, hints.lineRepair.buffer]);
   } catch (error) { self.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };

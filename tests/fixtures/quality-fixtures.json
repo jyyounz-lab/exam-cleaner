@@ -1,0 +1,228 @@
+{
+  "schema": 1,
+  "synthetic": true,
+  "description": "Independent clean reference, marked input, alpha ink mask, printed alpha mask and paper-only background. No real children or external exam materials.",
+  "coordinates": "Source-image pixels; roi=[left, top, right, bottom], right/bottom exclusive.",
+  "maskSemantics": "PNG grayscale alpha 0..255. Very low alpha captures anti-aliased fringes; quality tests should state an alpha floor. Ink overlapping print is recorded separately and cannot be assumed recoverable from marked input.",
+  "seed": "Deterministic vector paths; no random generation",
+  "fixtures": [
+    {
+      "id": "flat",
+      "clean": "tests/fixtures/flat-clean.png",
+      "marked": "tests/fixtures/flat-marked.png",
+      "inkMask": "tests/fixtures/flat-ink-mask.png",
+      "printMask": "tests/fixtures/flat-print-mask.png",
+      "paper": "tests/fixtures/flat-paper.png",
+      "gradient": false,
+      "size": [
+        900,
+        1240
+      ],
+      "regions": [
+        {
+          "name": "blue_pen",
+          "kind": "blue",
+          "roi": [
+            355,
+            245,
+            452,
+            309
+          ]
+        },
+        {
+          "name": "faint_blue_pen",
+          "kind": "faint_blue",
+          "roi": [
+            357,
+            435,
+            454,
+            499
+          ]
+        },
+        {
+          "name": "gray_pencil",
+          "kind": "pencil",
+          "roi": [
+            353,
+            626,
+            405,
+            703
+          ]
+        },
+        {
+          "name": "red_pen",
+          "kind": "red",
+          "roi": [
+            350,
+            809,
+            440,
+            880
+          ]
+        },
+        {
+          "name": "red_check",
+          "kind": "red",
+          "roi": [
+            660,
+            234,
+            742,
+            307
+          ]
+        }
+      ],
+      "printedProtectedRois": [
+        {
+          "name": "chinese_title",
+          "roi": [
+            65,
+            45,
+            600,
+            100
+          ]
+        },
+        {
+          "name": "instruction",
+          "roi": [
+            65,
+            185,
+            670,
+            230
+          ]
+        },
+        {
+          "name": "math_operators",
+          "roi": [
+            82,
+            265,
+            305,
+            915
+          ]
+        },
+        {
+          "name": "table_and_chinese",
+          "roi": [
+            80,
+            1050,
+            820,
+            1170
+          ]
+        }
+      ],
+      "groundTruth": {
+        "inkAlphaPixels": 5868,
+        "visibleInkPixels": 5851,
+        "printedAlphaPixels": 47036,
+        "inkPrintOverlapPixels": 13
+      }
+    },
+    {
+      "id": "shadow",
+      "clean": "tests/fixtures/shadow-clean.png",
+      "marked": "tests/fixtures/shadow-marked.png",
+      "inkMask": "tests/fixtures/shadow-ink-mask.png",
+      "printMask": "tests/fixtures/shadow-print-mask.png",
+      "paper": "tests/fixtures/shadow-paper.png",
+      "gradient": true,
+      "size": [
+        900,
+        1240
+      ],
+      "regions": [
+        {
+          "name": "blue_pen",
+          "kind": "blue",
+          "roi": [
+            355,
+            245,
+            452,
+            309
+          ]
+        },
+        {
+          "name": "faint_blue_pen",
+          "kind": "faint_blue",
+          "roi": [
+            357,
+            435,
+            454,
+            499
+          ]
+        },
+        {
+          "name": "gray_pencil",
+          "kind": "pencil",
+          "roi": [
+            353,
+            626,
+            405,
+            703
+          ]
+        },
+        {
+          "name": "red_pen",
+          "kind": "red",
+          "roi": [
+            350,
+            809,
+            440,
+            880
+          ]
+        },
+        {
+          "name": "red_check",
+          "kind": "red",
+          "roi": [
+            660,
+            234,
+            742,
+            307
+          ]
+        }
+      ],
+      "printedProtectedRois": [
+        {
+          "name": "chinese_title",
+          "roi": [
+            65,
+            45,
+            600,
+            100
+          ]
+        },
+        {
+          "name": "instruction",
+          "roi": [
+            65,
+            185,
+            670,
+            230
+          ]
+        },
+        {
+          "name": "math_operators",
+          "roi": [
+            82,
+            265,
+            305,
+            915
+          ]
+        },
+        {
+          "name": "table_and_chinese",
+          "roi": [
+            80,
+            1050,
+            820,
+            1170
+          ]
+        }
+      ],
+      "groundTruth": {
+        "inkAlphaPixels": 5868,
+        "visibleInkPixels": 5851,
+        "printedAlphaPixels": 47036,
+        "inkPrintOverlapPixels": 13
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import type { History } from './core';
-export type Draft = { version: 1; original: File; work: Blob; history: History; ai: { handwriting: Float32Array; print: Float32Array } | null; savedAt: number };
+import type { AiResult } from './ai';
+export type Draft = { version: 1; original: File; work: Blob; history: History; ai: AiResult | null; savedAt: number };
 async function database(): Promise<IDBDatabase> { return new Promise((resolve, reject) => { const r = indexedDB.open('practice-again', 1); r.onupgradeneeded = () => r.result.createObjectStore('drafts'); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); }); }
 export async function saveDraft(draft: Draft) { const db = await database(); try { await new Promise<void>((resolve, reject) => { const tx = db.transaction('drafts', 'readwrite'); tx.objectStore('drafts').put(draft, 'current'); tx.oncomplete = () => resolve(); tx.onerror = tx.onabort = () => reject(new Error('儲存失敗，可能空間不足。請先下載原圖及成果。')); }); } finally { db.close(); } }
 export async function loadDraft(): Promise<Draft | undefined> { const db = await database(); try { return await new Promise((resolve, reject) => { const r = db.transaction('drafts').objectStore('drafts').get('current'); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); }); } finally { db.close(); } }

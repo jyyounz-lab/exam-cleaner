@@ -1,0 +1,271 @@
+{
+  "version": "0.2.0",
+  "date": "2026-10-29",
+  "kind": "synthetic_regression",
+  "baselineCommit": "c94ea035d1c1eaed601c3db211b610810cd9f1bb",
+  "metric": "Ink-region RGB absolute error relative to the independently rendered clean reference; pixels overlapping printed content are excluded from ink error.",
+  "limitation": "Two synthetic pages used during development, not an independent real-exam accuracy benchmark.",
+  "passed": true,
+  "cases": [
+    {
+      "id": "flat",
+      "regions": 4,
+      "elapsed": 2494.595000002533,
+      "before": {
+        "inkPixels": 3607,
+        "selectedInk": 2125,
+        "coverage": 0.5891322428611034,
+        "inkErrorRemoved": 0.6563043409250435,
+        "printPixels": 23016,
+        "changedPrint": 0,
+        "pixelsChangedOutsideMask": 0
+      },
+      "after": {
+        "inkPixels": 3607,
+        "selectedInk": 3603,
+        "coverage": 0.9988910451899086,
+        "inkErrorRemoved": 0.9988598325990878,
+        "printPixels": 23016,
+        "changedPrint": 0,
+        "pixelsChangedOutsideMask": 0
+      },
+      "perRegion": [
+        {
+          "name": "blue_pen",
+          "before": {
+            "inkPixels": 952,
+            "selectedInk": 743,
+            "coverage": 0.7804621848739496,
+            "inkErrorRemoved": 0.7353766902768835,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 952,
+            "selectedInk": 952,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "faint_blue_pen",
+          "before": {
+            "inkPixels": 672,
+            "selectedInk": 63,
+            "coverage": 0.09375,
+            "inkErrorRemoved": 0.08344145485483356,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 672,
+            "selectedInk": 672,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "gray_pencil",
+          "before": {
+            "inkPixels": 460,
+            "selectedInk": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printPixels": 90,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 460,
+            "selectedInk": 456,
+            "coverage": 0.991304347826087,
+            "inkErrorRemoved": 0.9905312877595108,
+            "printPixels": 90,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "red_pen",
+          "before": {
+            "inkPixels": 1045,
+            "selectedInk": 883,
+            "coverage": 0.8449760765550239,
+            "inkErrorRemoved": 0.8300683964017546,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 1045,
+            "selectedInk": 1045,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "red_check",
+          "before": {
+            "inkPixels": 478,
+            "selectedInk": 436,
+            "coverage": 0.9121338912133892,
+            "inkErrorRemoved": 0.940475519430008,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 478,
+            "selectedInk": 478,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "shadow",
+      "regions": 6,
+      "elapsed": 2577.3199999965727,
+      "before": {
+        "inkPixels": 3607,
+        "selectedInk": 2151,
+        "coverage": 0.596340449126698,
+        "inkErrorRemoved": 0.6797659339911033,
+        "printPixels": 23016,
+        "changedPrint": 0,
+        "pixelsChangedOutsideMask": 0
+      },
+      "after": {
+        "inkPixels": 3607,
+        "selectedInk": 3607,
+        "coverage": 1,
+        "inkErrorRemoved": 0.9999042975903237,
+        "printPixels": 23016,
+        "changedPrint": 0,
+        "pixelsChangedOutsideMask": 0
+      },
+      "perRegion": [
+        {
+          "name": "blue_pen",
+          "before": {
+            "inkPixels": 952,
+            "selectedInk": 731,
+            "coverage": 0.7678571428571429,
+            "inkErrorRemoved": 0.749819829705707,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 952,
+            "selectedInk": 952,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9999881369353552,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "faint_blue_pen",
+          "before": {
+            "inkPixels": 672,
+            "selectedInk": 54,
+            "coverage": 0.08035714285714286,
+            "inkErrorRemoved": 0.07661992073026958,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 672,
+            "selectedInk": 672,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "gray_pencil",
+          "before": {
+            "inkPixels": 460,
+            "selectedInk": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printPixels": 90,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 460,
+            "selectedInk": 460,
+            "coverage": 1,
+            "inkErrorRemoved": 0.999633114475927,
+            "printPixels": 90,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "red_pen",
+          "before": {
+            "inkPixels": 1045,
+            "selectedInk": 912,
+            "coverage": 0.8727272727272727,
+            "inkErrorRemoved": 0.8694720409139615,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 1045,
+            "selectedInk": 1045,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9999048772776996,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        },
+        {
+          "name": "red_check",
+          "before": {
+            "inkPixels": 478,
+            "selectedInk": 454,
+            "coverage": 0.9497907949790795,
+            "inkErrorRemoved": 0.9772465939579776,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          },
+          "after": {
+            "inkPixels": 478,
+            "selectedInk": 478,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9998954667410014,
+            "printPixels": 0,
+            "changedPrint": 0,
+            "pixelsChangedOutsideMask": 0
+          }
+        }
+      ]
+    }
+  ]
+}

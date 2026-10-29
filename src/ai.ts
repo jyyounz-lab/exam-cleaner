@@ -1,4 +1,5 @@
-export type AiResult = { handwriting: Float32Array; print: Float32Array; elapsed: number; tiles: number };
+import type { InkHints } from './refine';
+export type AiResult = { handwriting: Float32Array; print: Float32Array; hints?: InkHints; elapsed: number; tiles: number };
 let active: Worker | undefined;
 export function analyse(image: ImageData, progress: (percent: number, message: string) => void): { promise: Promise<AiResult>; cancel: () => void } {
   active?.terminate(); const worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' }); active = worker;

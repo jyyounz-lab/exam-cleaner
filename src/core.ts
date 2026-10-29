@@ -2,8 +2,8 @@ export type Point = { x: number; y: number };
 export type Rect = { x: number; y: number; w: number; h: number };
 export type Tool = 'erase' | 'restore' | 'protect' | 'unprotect' | 'region' | 'pan';
 export type Stroke = { tool: Exclude<Tool, 'region' | 'pan'>; radius: number; points: Point[] };
-export type Edit = { threshold: number; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; grow: boolean; region: Rect | null; strokes: Stroke[] };
-export const initialEdit = (): Edit => ({ threshold: 0.8, color: 'none', protectPrint: true, allowNeutralInk: false, grow: true, region: null, strokes: [] });
+export type Edit = { threshold: number; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
+export const initialEdit = (): Edit => ({ threshold: 0.8, color: 'none', protectPrint: true, allowNeutralInk: false, autoAnswers: true, repair: 'paper', grow: true, region: null, strokes: [] });
 export type History = { past: Edit[]; present: Edit; future: Edit[] };
 export function changeHistory(h: History, next: Edit | 'undo' | 'redo'): History {
   if (next === 'undo') return h.past.length ? { past: h.past.slice(0, -1), present: h.past.at(-1)!, future: [h.present, ...h.future] } : h;
@@ -47,22 +47,22 @@ export function colorCandidate(r: number, g: number, b: number, mode: Edit['colo
   const blue = b > r * 1.15 + 12 && b > g * 1.08 + 8 && Math.min(r, g) < 210;
   return mode === 'red' ? red : mode === 'blue' ? blue : mode === 'both' && (red || blue);
 }
-export function composeMask(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, ai?: { handwriting: Float32Array; print: Float32Array } | null) {
+export function composeMask(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, ai?: { handwriting: Float32Array; print: Float32Array; hints?: InkHints } | null) {
   const { width: w, height: h, data } = image, n = w * h;
   if (ai && (ai.handwriting.length !== n || ai.print.length !== n)) throw new Error('AI 遮罩尺寸與底圖不符，請重新分析。');
   const manual = drawMasks(edit.strokes, w, h), candidate = new Uint8Array(n), mask = new Uint8Array(n);
-  for (let i = 0; i < n; i++) candidate[i] = Number(!!manual.erase[i] || !!ai && ai.handwriting[i] >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
+  for (let i = 0; i < n; i++) candidate[i] = Number(!!manual.erase[i] || !!ai && (ai.hints ? ai.hints.confidence[i]/255 : ai.handwriting[i]) >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
   let count = 0, protectedCount = 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
     let selected = candidate[i];
-    if (edit.grow && !selected) for (let dy = -1; dy <= 1 && !selected; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < w && yy >= 0 && yy < h && candidate[yy * w + xx]) { selected = 1; break; } }
+    if (edit.grow && !selected) for (let dy = -2; dy <= 2 && !selected; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < w && yy >= 0 && yy < h && candidate[yy * w + xx]) { selected = 1; break; } }
     const region = edit.region, allowed = !region || x / w >= region.x && x / w <= region.x + region.w && y / h >= region.y && y / h <= region.y + region.h;
     const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
     const neutralInk = Math.max(r, g, b) - Math.min(r, g, b) < 26 && Math.min(r, g, b) < 245;
-    // The English research model misclassifies Chinese symbols; neutral ink requires an explicit answer ROI.
-    const protectNeutral = neutralInk && !(edit.allowNeutralInk && region) && !manual.erase[i];
-    const protectedPixel = manual.keep[i] || protectNeutral || edit.protectPrint && ai && ai.print[i] >= 0.65;
+    const supported = !!ai?.hints?.colorInk[i] || !!edit.autoAnswers && !!ai?.hints?.answerInk[i];
+    const protectNeutral = neutralInk && !(edit.allowNeutralInk && region) && !supported && !manual.erase[i];
+    const protectedPixel = manual.keep[i] || protectNeutral || !!ai?.hints?.structure[i] && !ai?.hints?.lineRepair?.[i] && !manual.erase[i] || edit.protectPrint && ai && ai.print[i] >= 0.65 && !supported && !manual.erase[i];
     if (selected && protectedPixel) protectedCount++;
     if (selected && allowed && !manual.reject[i] && !protectedPixel) { mask[i] = 255; count++; }
   }
@@ -96,3 +96,4 @@ export function sauvola(image: { width: number; height: number; data: Uint8Clamp
   }
   return out;
 }
+import type { InkHints } from './refine';
