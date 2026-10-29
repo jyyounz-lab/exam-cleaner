@@ -1,0 +1,135 @@
+import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { ArrowLeft, ArrowRight, ArrowsClockwise, Camera, Check, CheckCircle, CloudSlash, DownloadSimple, Eraser, FileText, FloppyDisk, Hand, ImageSquare, Info, MagicWand, Minus, Plus, ShieldCheck, ShieldPlus, SlidersHorizontal, SpinnerGap, Selection, Trash, UploadSimple, ArrowCounterClockwise, ArrowClockwise, X, WarningCircle } from '@phosphor-icons/react';
+import Stage from './Stage';
+import { initialEdit, changeHistory, composeMask, validQuad, type Edit, type History, type Point, type Tool } from './core';
+import { readImage, blobFor, download, rotate, fullQuad, demoFile } from './images';
+import { analyse, type AiResult } from './ai';
+import { processImage } from './processor';
+import { loadDraft, saveDraft, deleteDraft, type Draft } from './storage';
+import './style.css';
+
+function Dialog({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { ref.current!.showModal(); return () => ref.current?.close(); }, []);
+  return <dialog ref={ref} onCancel={e => { e.preventDefault(); onClose(); }} aria-labelledby="dialog-title"><div className="dialog-head"><h2 id="dialog-title">{title}</h2><button className="icon-button" aria-label="關閉視窗" onClick={onClose}><X size={20} /></button></div>{children}</dialog>;
+}
+function ImagePreview({ image, label }: { image: ImageData; label: string }) { const ref = useRef<HTMLCanvasElement>(null); useEffect(() => { const c = ref.current!; c.width = image.width; c.height = image.height; c.getContext('2d')!.putImageData(image, 0, 0); }, [image]); return <figure className="dialog-preview"><figcaption>{label}</figcaption><canvas ref={ref} aria-label={label} /></figure>; }
+const freshHistory = (): History => ({ past: [], present: initialEdit(), future: [] });
+const steps = ['圖片校正', 'AI 優先', '半自動調整', '手動精修'];
+function App() {
+  const [original, setOriginal] = useState<File | null>(null), [sourceUrl, setSourceUrl] = useState('');
+  const [input, setInput] = useState<ImageData | null>(null), [work, setWork] = useState<ImageData | null>(null), [preview, setPreview] = useState<ImageData | null>(null);
+  const [ai, setAi] = useState<AiResult | null>(null), [aiError, setAiError] = useState('');
+  const [history, setHistory] = useState<History>(freshHistory), [step, setStep] = useState(0), [quad, setQuad] = useState<Point[]>(fullQuad);
+  const [tool, setTool] = useState<Tool>('pan'), [brush, setBrush] = useState(20), [zoom, setZoom] = useState(100), [view, setView] = useState('mask');
+  const [busy, setBusy] = useState(''), [previewBusy, setPreviewBusy] = useState(false), [progress, setProgress] = useState(0), [status, setStatus] = useState('');
+  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [modal, setModal] = useState<'privacy' | 'original' | 'export' | null>(null), [exportBusy, setExportBusy] = useState(false);
+  const [draft, setDraft] = useState<Draft | undefined>(), [angle, setAngle] = useState(0), [exportChecked, setExportChecked] = useState(false);
+  const [offlineReady, setOfflineReady] = useState(false);
+  const picker = useRef<HTMLInputElement>(null), camera = useRef<HTMLInputElement>(null), token = useRef(0), cancelAi = useRef<(() => void) | null>(null);
+  const edit = history.present;
+  const masks = useMemo(() => work ? composeMask(work, edit, ai) : null, [work, edit, ai]);
+  const update = (next: Partial<Edit>) => setHistory(h => changeHistory(h, { ...h.present, ...next }));
+  useEffect(() => { if (!original) return; const u = URL.createObjectURL(original); setSourceUrl(u); return () => URL.revokeObjectURL(u); }, [original]);
+  useEffect(() => { loadDraft().then(setDraft).catch(() => {}); }, []);
+  useEffect(() => { if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return; let live = true; navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready).then(() => { if (live) setOfflineReady(true); }).catch(() => {}); return () => { live = false; }; }, []);
+  useEffect(() => { if (modal === 'export') setExportChecked(false); }, [modal]);
+  useEffect(() => { if (!original) return; const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); }; window.addEventListener('beforeunload', handler); return () => window.removeEventListener('beforeunload', handler); }, [original]);
+  useEffect(() => { const key = (e: KeyboardEvent) => { if (modal || !original || (e.target as HTMLElement).matches('input,textarea')) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); setHistory(h => changeHistory(h, e.shiftKey ? 'redo' : 'undo')); } }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key); }, [original, modal]);
+  useEffect(() => {
+    if (!work || !masks || step === 0) return;
+    let cancelled = false; setPreviewBusy(true);
+    const timeout = setTimeout(async () => {
+      try { const result = masks.count ? await processImage('clean', work, { mask: masks.mask }) : work; if (!cancelled) { setPreview(result); setPreviewBusy(false); } }
+      catch (e) { if (!cancelled) { setError(e instanceof Error ? e.message : String(e)); setPreviewBusy(false); setPreview(null); } }
+    }, 240);
+    return () => { cancelled = true; clearTimeout(timeout); };
+  }, [work, masks, step === 0]);
+  async function importFile(file: File) {
+    if (original && !confirm('更換圖片會結束目前編輯。需要保留進度時，請先儲存或匯出。')) return;
+    const current = ++token.current; cancelAi.current?.(); setBusy('import'); setError(''); setNotice('');
+    try { const img = await readImage(file); if (current !== token.current) return; setOriginal(file); setInput(img); setWork(img); setPreview(null); setAi(null); setAiError(''); setHistory(freshHistory()); setQuad(fullQuad()); setAngle(0); setStep(0); setZoom(100); setView('mask'); }
+    catch (e) { if (current === token.current) setError(e instanceof Error ? e.message : String(e)); }
+    finally { if (current === token.current) setBusy(''); }
+  }
+  async function runAi(image = work) {
+    if (!image) return; const current = ++token.current; cancelAi.current?.(); setBusy('ai'); setProgress(0); setAiError(''); setError('');
+    const task = analyse(image, (percent, message) => { if (current === token.current) { setProgress(percent); setStatus(message); } }); cancelAi.current = task.cancel;
+    try { const result = await task.promise; if (current !== token.current) return; setAi(result); setNotice('AI 分析完成。請檢查題目與數學符號，滿意即可確認匯出。'); }
+    catch (e) { if (current === token.current) { const message = e instanceof Error ? e.message : String(e); setAiError(message); setNotice('可重試 AI，或切換半自動／手動工具繼續處理。'); } }
+    finally { if (current === token.current) { setBusy(''); cancelAi.current = null; } }
+  }
+  async function calibrate() {
+    if (!input || !validQuad(quad)) { setError('請將四角依左上、右上、右下、左下排成完整紙張範圍。'); return; }
+    setBusy('rectify'); setError('');
+    try { let img = await processImage('rectify', input, { quad }); if (angle) img = rotate(img, angle); setWork(img); setPreview(img); setHistory(freshHistory()); setAi(null); setAiError(''); setStep(1); setView('mask'); setZoom(100); await runAi(img); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); setBusy(''); }
+  }
+  function goStep(next: number) {
+    if (busy || !work || next === step) return;
+    if (next === 0 && step !== 0) { if (!confirm('重新校正會清除目前的 AI 遮罩與人工修正，原始照片仍保留。')) return; setInput(work); setQuad(fullQuad()); setAngle(0); setAi(null); setHistory(freshHistory()); }
+    setStep(next); setTool(next === 2 ? 'region' : next === 3 ? 'erase' : 'pan'); if (next >= 2) setView('mask');
+  }
+  async function resetOriginal() { if (!original || !confirm('從原圖重新開始？目前遮罩與校正將重設，原始照片保持不變。')) return; setBusy('import'); try { const img = await readImage(original); setInput(img); setWork(img); setAi(null); setPreview(null); setHistory(freshHistory()); setQuad(fullQuad()); setStep(0); setAngle(0); setZoom(100); setError(''); } catch (e) { setError(String(e)); } finally { setBusy(''); } }
+  async function save() {
+    if (!original || !work || step === 0) return; setBusy('save');
+    try { const record: Draft = { version: 1, original, work: await blobFor(work), history, ai, savedAt: Date.now() }; await saveDraft(record); setDraft(record); setNotice('編輯進度已儲存在此瀏覽器。重要考卷請另下載原圖與成果。'); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(''); }
+  }
+  async function restoreDraft() {
+    if (!draft) return; setBusy('import');
+    try { const file = new File([draft.original], draft.original.name || '原始考卷.jpg', { type: draft.original.type }); const img = await readImage(new File([draft.work], 'work.png', { type: 'image/png' })); if (draft.ai && draft.ai.handwriting.length !== img.width * img.height) throw new Error('暫存的遮罩與圖片尺寸不符，請從原圖重新開始。'); setOriginal(file); setInput(img); setWork(img); setPreview(img); setAi(draft.ai as AiResult); setHistory(draft.history); setStep(1); setQuad(fullQuad()); setNotice('已恢復此裝置的編輯進度。'); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(''); }
+  }
+  async function exportFile(format: 'jpg' | 'pdf') {
+    if (!work || !masks || !original || exportBusy || !exportChecked) return; setExportBusy(true); setError('');
+    try {
+      const exact = masks.count ? await processImage('clean', work, { mask: masks.mask }) : work;
+      const jpg = await blobFor(exact, 'image/jpeg'), stem = original.name.replace(/\.[^.]+$/, '').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').slice(0, 100);
+      if (format === 'jpg') download(jpg, `${stem}_清理後.jpg`);
+      else { const { PDFDocument } = await import('pdf-lib'); const pdf = await PDFDocument.create(), embedded = await pdf.embedJpg(await jpg.arrayBuffer()); const page = pdf.addPage(exact.width > exact.height ? [841.89, 595.28] : [595.28, 841.89]); const size = embedded.scaleToFit(page.getWidth() - 40, page.getHeight() - 40); page.drawImage(embedded, { x: (page.getWidth() - size.width) / 2, y: (page.getHeight() - size.height) / 2, ...size }); pdf.setTitle('考卷練習'); download(new Blob([new Uint8Array(await pdf.save())], { type: 'application/pdf' }), `${stem}_清理後.pdf`); }
+      setPreview(exact); setModal(null); setNotice('已交由瀏覽器下載。手機可在下載項目或檔案 App 查看。');
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setExportBusy(false); }
+  }
+  const display = step === 0 ? input : view === 'result' ? preview || work : work;
+  return <>
+    <header className="app-header"><button className="brand" onClick={() => { if (!original) return; if (busy) return; if (confirm('回到首頁？請先儲存或匯出需要保留的編輯。')) { setOriginal(null); setWork(null); setInput(null); setPreview(null); setAi(null); setHistory(freshHistory()); setNotice(''); setError(''); } }}><span className="brand-icon"><FileText weight="duotone" size={25} /></span><span>再練一張<small>考卷筆跡清理</small></span></button><div className="header-right"><span className="local-label"><CloudSlash size={18} /> 照片留在此裝置</span><button className="text-button" onClick={() => setModal('privacy')}><ShieldCheck size={18} /><span>本機與隱私</span></button>{original && <button className="button small" disabled={!!busy} onClick={() => picker.current?.click()}><UploadSimple size={17} />更換圖片</button>}</div></header>
+    <input ref={picker} hidden type="file" accept="image/jpeg,image/png" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importFile(f); }} />
+    <input ref={camera} hidden type="file" accept="image/jpeg,image/png" capture="environment" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importFile(f); }} />
+    {error && <div className="message error" role="alert"><WarningCircle size={20} /><span>{error}</span><button aria-label="關閉錯誤訊息" onClick={() => setError('')}><X size={16} /></button></div>}
+    {notice && <div className="message notice" role="status"><CheckCircle size={20} /><span>{notice}</span><button aria-label="關閉提示" onClick={() => setNotice('')}><X size={16} /></button></div>}
+    {!original ? <main className="welcome">
+      <section className="welcome-copy"><div className="eyebrow"><span className="rule" /> 留下題目，重新練習</div><h1>同一張考卷，<br /><em>再練一次。</em></h1><p className="intro">把作答過的考卷變回練習題。<br />先讓 AI 找出筆跡，再由你決定留下什麼。</p><div className="import-actions"><button className="button primary large" disabled={!!busy} onClick={() => picker.current?.click()}><UploadSimple size={21} />選擇考卷圖片<ArrowRight size={20} /></button><button className="button large" disabled={!!busy} onClick={() => camera.current?.click()}><Camera size={22} />拍攝考卷</button></div><p className="file-hint">JPG、PNG · 每張 35 MB 以內 · 手機與電腦皆可使用</p><button className="demo-link" disabled={!!busy} onClick={async () => { try { await importFile(await demoFile()); } catch { setError('示範圖片建立失敗，請直接選擇圖片。'); } }}><ImageSquare size={18} /> 先用示範考卷試試 <ArrowRight size={16} /></button><div className="assurances"><span><ShieldCheck size={20} /> 原圖獨立保留</span><span><CloudSlash size={20} /> 本機處理</span><span><Check size={20} /> 無需 API 金鑰</span></div>
+      {draft && <div className="draft-row"><FloppyDisk size={22} /><span>上次的編輯還在<small>{new Date(draft.savedAt).toLocaleString('zh-TW')}</small></span><button className="text-button" disabled={!!busy} onClick={restoreDraft}>繼續編輯<ArrowRight size={16} /></button><button className="icon-button" aria-label="刪除暫存專案" disabled={!!busy} onClick={async () => { if (confirm('刪除此瀏覽器儲存的編輯進度？已下載的檔案保持不變。')) { try { await deleteDraft(); setDraft(undefined); } catch { setError('刪除失敗，請重試。'); } } }}><Trash size={18} /></button></div>}
+      </section>
+      <section className="welcome-art" aria-label="考卷清理示意"><div className="art-label"><span>一張練習，兩次學習。</span><span>01 / PRACTICE AGAIN</span></div><div className="sample-paper"><div className="sample-top"><span>數學小練習</span><span>三年級</span></div><div className="sample-meta">姓名 __________　日期 __________</div><div className="sample-question">一、算算看，將答案填入空格。</div><div className="sample-equation">24 + 18 = <span className="sample-answer">42</span><span className="sample-check">✓</span></div><div className="sample-equation">56 − 29 = <span className="sample-answer faint">27</span><span className="sample-check faint">✓</span></div><div className="sample-equation clean">7 × 8 = <span>________</span></div><div className="sample-equation clean">81 ÷ 9 = <span>________</span></div><div className="sample-line" /><div className="sample-caption"><ShieldCheck size={17} /> 保留題目與原始照片</div></div><div className="art-note"><MagicWand size={22} /><span>AI 找筆跡<small>清除前，每一筆都由你確認</small></span></div></section>
+      <section className="welcome-process"><p>從分析到精修，<strong>你始終有最後決定權。</strong></p><div><span className="process-index">01</span><MagicWand size={20} /><span>AI 優先分析</span><ArrowRight size={18} /><span className="process-index">02</span><SlidersHorizontal size={20} /><span>半自動調整</span><ArrowRight size={18} /><span className="process-index">03</span><Eraser size={20} /><span>手動精修</span></div></section>
+    </main> : <main className="editor">
+      <div className="editor-top"><div className="document-title"><FileText size={20} /><span title={original.name}>{original.name}</span><small>原圖已獨立保留</small></div><div className="document-actions"><button className="text-button" disabled={!!busy} onClick={() => setModal('original')}>查看原圖</button><button className="button small" disabled={!!busy || step === 0} onClick={save}><FloppyDisk size={17} />儲存進度</button><button className="button primary small" disabled={!!busy || step === 0 || previewBusy || !preview} onClick={() => setModal('export')}><DownloadSimple size={17} />確認匯出</button></div></div>
+      <nav className="step-nav" aria-label="考卷處理步驟">{steps.map((name, i) => <button key={name} className={step === i ? 'active' : ''} disabled={!!busy || step === 0 && i > 0} onClick={() => goStep(i)} aria-current={step === i ? 'step' : undefined}><span>{i + 1}</span>{name}{i < 3 && <ArrowRight className="step-arrow" size={15} />}</button>)}</nav>
+      <div className="workspace"><section className="canvas-column"><div className="canvas-toolbar"><div className="segmented" aria-label="預覽模式">{[['mask', '待清除遮罩'], ['result', '清除預覽'], ['base', '校正底圖']].map(([key, label]) => <button key={key} disabled={step === 0} className={view === key ? 'active' : ''} onClick={() => setView(key)} aria-pressed={view === key}>{label}</button>)}</div><div className="undo-tools"><button className="icon-button" aria-label="復原" disabled={!history.past.length || !!busy || step === 0} onClick={() => setHistory(h => changeHistory(h, 'undo'))}><ArrowCounterClockwise size={20} /></button><button className="icon-button" aria-label="重做" disabled={!history.future.length || !!busy || step === 0} onClick={() => setHistory(h => changeHistory(h, 'redo'))}><ArrowClockwise size={20} /></button></div></div>
+      {display && masks && <Stage image={display} mask={masks.mask} keep={masks.keep} view={view} tool={tool} brush={brush} zoom={zoom} crop={step === 0} quad={quad} region={edit.region} disabled={!!busy} onZoom={setZoom} onQuad={setQuad} onStroke={stroke => update({ strokes: [...edit.strokes, stroke] })} onRegion={region => update({ region })} />}
+      <div className="canvas-footer"><span>{work?.width} × {work?.height} px<span className="separator">·</span>{step === 0 ? '拖曳四角對齊紙張' : previewBusy ? '更新清除預覽中…' : '紅色：待清除　綠色：人工保留'}</span><div className="zoom-control"><button className="icon-button" aria-label="縮小" disabled={zoom <= 100} onClick={() => setZoom(z => Math.max(100, z - 25))}><Minus size={16} /></button><button className="zoom-label" aria-label="縮放重設為100%" onClick={() => setZoom(100)}>{zoom}%</button><button className="icon-button" aria-label="放大" disabled={zoom >= 800} onClick={() => setZoom(z => Math.min(800, z + 25))}><Plus size={16} /></button></div></div></section>
+      <aside className="controls"><div className="panel-heading"><span className="eyebrow">{step === 0 ? '準備圖片' : `第 ${step} 層清理`}</span><h2>{steps[step]}</h2><p>{step === 0 ? '先對齊紙張，再讓 AI 分析筆跡。' : step === 1 ? 'AI 提出建議，清除前由你確認。' : step === 2 ? '調整候選範圍，補選漏掉的筆跡。' : '放大圖片，逐筆補擦或保留內容。'}</p></div>
+      {step === 0 ? <><div className="panel-block"><h3>對齊紙張四角</h3><p className="muted">拖曳圖片上的四個圓點，框住整張考卷；正面掃描可直接使用完整圖片。</p><button className="button full" disabled={!!busy} onClick={() => setQuad(fullQuad())}><Selection size={18} />選取整張圖片</button></div><div className="panel-block"><h3>旋轉方向</h3><div className="rotation-actions"><button className="button" disabled={!!busy} onClick={() => { if (input) { setInput(rotate(input, -90)); setQuad(fullQuad()); } }}><ArrowCounterClockwise size={18} />左轉</button><button className="button" disabled={!!busy} onClick={() => { if (input) { setInput(rotate(input, 90)); setQuad(fullQuad()); } }}><ArrowClockwise size={18} />右轉</button></div><label className="range-label" htmlFor="angle">微調角度<span>{angle}°</span></label><input id="angle" type="range" min="-10" max="10" step="0.5" value={angle} disabled={!!busy} onChange={e => setAngle(+e.target.value)} /><p className="muted">微調角度於校正後套用。</p></div><button className="button primary full" disabled={!!busy} onClick={calibrate}>{busy ? <SpinnerGap className="spin" size={19} /> : <MagicWand size={19} />}{busy ? '準備中…' : '完成校正，開始 AI 分析'}<ArrowRight size={18} /></button></> : <>
+      {step === 1 && <><div className={`ai-state ${ai ? 'ready' : ''}`}><span className="state-icon">{busy === 'ai' ? <SpinnerGap className="spin" size={23} /> : ai ? <CheckCircle size={25} /> : <MagicWand size={24} />}</span><div><strong>{busy === 'ai' ? 'AI 正在本機分析' : ai ? 'AI 分析已完成' : aiError ? 'AI 暫時無法使用' : '準備分析筆跡'}</strong><small>{busy === 'ai' ? status : ai?.elapsed ? `${ai.tiles} 區塊 · 推論 ${(ai.elapsed / 1000).toFixed(1)} 秒` : '圖片與結果都留在此裝置'}</small></div></div>{busy === 'ai' && <><progress max="100" value={progress} aria-label="AI 分析進度" /><button className="text-button full" onClick={() => cancelAi.current?.()}>停止分析</button></>}{aiError && <p className="inline-warning" role="status">{aiError}</p>}<button className="button full" disabled={!!busy} onClick={() => runAi()}><ArrowsClockwise size={18} />{ai ? '重新分析，保留人工修正' : '重試 AI 分析'}</button><div className="model-note"><Info size={18} /><p>實驗模型預設保留黑／灰色內容。黑筆或鉛筆請在半自動層圈定答案區後啟用；中文與重疊題目仍需檢查。</p></div></>}
+      {(step === 1 || step === 2) && <div className="panel-block"><label className="range-label" htmlFor="threshold">AI 選取門檻<span>{Math.round(edit.threshold * 100)}%</span></label><input id="threshold" type="range" min="0.5" max="0.98" step="0.02" value={edit.threshold} disabled={!!busy || !ai} onChange={e => update({ threshold: +e.target.value })} /><div className="range-legend"><span>選取較多</span><span>較保守</span></div><label className="check-row"><input type="checkbox" checked={edit.protectPrint} disabled={!!busy} onChange={e => update({ protectPrint: e.target.checked })} /><span>保護 AI 判定的印刷內容<small>人工保留區始終優先</small></span></label><label className="check-row"><input type="checkbox" checked={edit.grow} disabled={!!busy} onChange={e => update({ grow: e.target.checked })} /><span>延伸 1 像素，減少墨色殘邊</span></label></div>}
+      {step === 2 && <><div className="panel-block"><h3>黑筆／鉛筆候選</h3><label className="check-row"><input type="checkbox" checked={!!edit.allowNeutralInk} disabled={!!busy || !edit.region} onChange={e => update({ allowNeutralInk: e.target.checked })} /><span>納入圈選答案區的黑／灰色候選<small>先使用下方工具圈定答案區，並檢查題目</small></span></label><h3>補選彩色筆跡</h3><div className="color-options">{[['none', '關閉'], ['red', '紅筆'], ['blue', '藍筆'], ['both', '紅＋藍']].map(([value, label]) => <button key={value} disabled={!!busy} className={edit.color === value ? 'active' : ''} aria-pressed={edit.color === value} onClick={() => update({ color: value as Edit['color'] })}>{label}</button>)}</div><p className="muted">色彩篩選也可能選到彩色題目，請先指定範圍或加入保留區。</p></div><div className="panel-block"><h3>限定處理範圍</h3><button className={`button full ${tool === 'region' ? 'selected' : ''}`} disabled={!!busy} onClick={() => { setTool('region'); setView('mask'); }}><Selection size={19} />在圖片上拖曳框選</button>{edit.region && <button className="text-button full" onClick={() => update({ region: null, allowNeutralInk: false })}>恢復整頁範圍</button>}<p className="muted">藍框只限制偵測範圍；實際清除像素以紅色遮罩呈現。</p></div></>}
+      {(step === 2 || step === 3) && <div className="panel-block"><h3>{step === 2 ? '候選增減與保留' : '精修工具'}</h3><div className="brush-tools">{([['erase', '補擦', Eraser], ['restore', '還原', ArrowCounterClockwise], ['protect', '保留', ShieldPlus], ['unprotect', '取消保留', Minus], ['pan', '移動', Hand]] as const).map(([value, label, Icon]) => <button key={value} disabled={!!busy} className={tool === value ? 'active' : ''} aria-pressed={tool === value} onClick={() => { setTool(value); setView('mask'); }}><Icon size={21} /><span>{label}</span></button>)}</div><label className="range-label" htmlFor="brush">筆刷大小<span>{brush}</span></label><input id="brush" type="range" min="3" max="100" value={brush} onChange={e => setBrush(+e.target.value)} /><p className="muted">還原會顯示未清除底圖的原有內容；保留筆刷可保護題目。</p></div>}
+      <div className="mask-summary"><span>待清除像素<strong>{masks?.count.toLocaleString() || 0}</strong></span><ShieldCheck size={22} /></div><p className="small-note">預覽不會覆蓋原圖。{!ai ? '目前使用半自動／手動替代流程。' : '手寫與印刷重疊處請人工確認。'}</p>
+      {step < 3 && <button className="button full" disabled={!!busy} onClick={() => goStep(step + 1)}>{step === 1 ? '需要調整，進入半自動' : '需要精修，進入手動'}<ArrowRight size={18} /></button>}
+      {step === 1 && <button className="text-button full" disabled={!!busy} onClick={() => goStep(3)}>直接手動精修</button>}
+      <button className="button primary full export-panel" disabled={!!busy || previewBusy || !preview} onClick={() => { setView('result'); setModal('export'); }}><CheckCircle size={19} />檢查完成，確認匯出</button>
+      </>}
+      <div className="panel-bottom"><button className="text-button" disabled={!!busy} onClick={() => { if (original) download(original, original.name); }}><DownloadSimple size={17} />下載原圖</button><button className="text-button" disabled={!!busy} onClick={resetOriginal}><ArrowLeft size={16} />重新開始</button></div>
+      </aside></div>
+    </main>}
+    <footer className="site-footer"><span>再練一張 · 本機考卷清理工具</span><span>{offlineReady ? '工具與 AI 已可離線使用' : '原圖保留 · 清除前確認 · 自己決定'}</span></footer>
+    {busy === 'import' && <div className="loading-cover" role="status"><SpinnerGap className="spin" size={30} /><span>正在裝置上準備圖片…</span></div>}
+    {modal === 'privacy' && <Dialog title="照片留在你的裝置" onClose={() => setModal(null)}><div className="privacy-content"><CloudSlash size={42} /><p>考卷的解碼、AI 分析、遮罩編輯與匯出，都在此瀏覽器執行。本站不設考卷上傳 API，也不需要雲端 AI 金鑰。</p><p>首次使用需要連線取得網站程式、影像引擎與模型。原圖獨立保留，清除預覽與成果使用副本。</p><p>「儲存進度」存於此瀏覽器；清除網站資料、更換裝置或瀏覽器可能遺失進度。重要檔案請下載至裝置備份。</p><p>實驗模型來源：<a href="https://github.com/Jumpst3r/printed-hw-segmentation" target="_blank" rel="noreferrer">PHTI-WS（MIT）</a>。模型品質尚待中文兒童考卷與實機驗收。</p><button className="button primary full" onClick={() => setModal(null)}>了解，繼續使用</button></div></Dialog>}
+    {modal === 'original' && original && <Dialog title="未經編輯的原始照片" onClose={() => setModal(null)}><img className="original-preview" src={sourceUrl} alt="獨立保留的原始考卷" /><p className="muted">這是匯入的原始檔案。校正、遮罩與清除都作用於副本。</p><button className="button primary full" onClick={() => download(original, original.name)}><DownloadSimple size={19} />下載原始檔案</button></Dialog>}
+    {modal === 'export' && preview && work && <Dialog title="確認後，帶走這張練習" onClose={() => { if (!exportBusy) setModal(null); }}><p className="muted">請先確認預覽中的題目、負號、分數、表格與圖片仍完整。重疊處可能保留少量筆跡。</p><div className="preview-pair"><ImagePreview image={work} label="清除前" /><ImagePreview image={preview} label="清除預覽" /></div><div className="export-summary"><CheckCircle size={22} /><span>原圖保持不變<strong>輸出 {work.width} × {work.height} px · 單頁</strong></span></div><label className="check-row export-confirm"><input type="checkbox" id="export-checked" checked={exportChecked} disabled={exportBusy} onChange={e => setExportChecked(e.target.checked)} />我已檢查題目與清除範圍</label><div className="export-buttons"><button className="button primary" disabled={!exportChecked || exportBusy} onClick={() => exportFile('jpg')}><DownloadSimple size={19} />{exportBusy ? '輸出中…' : '下載 JPG'}</button><button className="button" disabled={!exportChecked || exportBusy} onClick={() => exportFile('pdf')}><FileText size={19} />下載 A4 PDF</button></div><p className="small-note">檔案交由瀏覽器下載；輸出仍在本機完成。</p></Dialog>}
+  </>;
+}
+createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);

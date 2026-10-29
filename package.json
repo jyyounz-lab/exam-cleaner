@@ -1,0 +1,28 @@
+{
+  "name": "exam-cleaner",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build && node scripts/copy-runtime.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --experimental-strip-types --test --test-isolation=none tests/core.test.ts",
+    "prepare:runtime": "node scripts/copy-runtime.mjs --dev"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "@techstark/opencv-js": "5.0.0-release.1",
+    "onnxruntime-web": "1.31.1",
+    "pdf-lib": "1.17.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "playwright": "1.62.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}

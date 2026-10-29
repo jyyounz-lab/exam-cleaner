@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.npm-cache/
+.sites-runtime/
+research/python-deps/
+research/*.h5
+test-results/
+public/vendor/
+.openai/*.tmp

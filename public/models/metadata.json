@@ -1,0 +1,132 @@
+{
+  "id": "phti-fcnn-light-2",
+  "name": "PHTI FCNN 筆跡分割（實驗模型）",
+  "version": "2019-onnx-1",
+  "file": "phti-fcnn.onnx",
+  "bytes": 1184717,
+  "sha256": "42c370c5517d897362981e026a940b6e26ed3121bf1cfe70e868d8eac62e0022",
+  "license": "MIT",
+  "licenseFile": "PHTI-LICENSE.txt",
+  "sourceRepository": "https://github.com/Jumpst3r/printed-hw-segmentation",
+  "sourceCommit": "b23f26c2490e55fea64bc1e9b5676bf07fbb2f9b",
+  "sourceFile": "FCN/models/fcnn_bin.h5",
+  "sourceSha256": "a4fbfc32291159114f7d65014ac9fa33c0f3e296e3271b136fa2d3152d8b2f00",
+  "input": {
+    "name": "image",
+    "type": "float32",
+    "shape": [
+      1,
+      3,
+      256,
+      256
+    ],
+    "layout": "NCHW"
+  },
+  "output": {
+    "name": "probabilities",
+    "type": "float32",
+    "shape": [
+      1,
+      3,
+      256,
+      256
+    ],
+    "layout": "NCHW",
+    "classes": [
+      "printed",
+      "handwritten",
+      "background"
+    ],
+    "handwritingChannel": 1,
+    "printedChannel": 0
+  },
+  "preprocessing": {
+    "grayscale": "sRGB luminance (original skimage rgb2gray)",
+    "binarization": "Sauvola, ink = grayscale < local threshold",
+    "sauvolaWindow": 15,
+    "sauvolaK": 0.2,
+    "sauvolaR": 1.0,
+    "inkValue": 1,
+    "paperValue": 0,
+    "normalization": "per-tile population mean/std of binary ink image; std=0 uses 1",
+    "channels": "replicate normalized binary image into 3 identical channels",
+    "tileSize": 256,
+    "suggestedOverlap": 10
+  },
+  "status": "experimental",
+  "verified": {
+    "conversion": true,
+    "onnxCpu": true,
+    "numpyReference": true,
+    "browserWasm": true,
+    "realExamQuality": false
+  },
+  "limitations": [
+    "Trained on the author's private dataset; no verified Chinese children's exam benchmark",
+    "Handwriting overlapping printed content cannot recover hidden original pixels",
+    "Probability values are not calibrated quality guarantees",
+    "Browser/mobile speed and quality require separate validation"
+  ],
+  "conversionValidation": {
+    "onnx_checker": true,
+    "input_shape": [
+      1,
+      3,
+      256,
+      256
+    ],
+    "output_shape": [
+      1,
+      3,
+      256,
+      256
+    ],
+    "finite_probabilities": true,
+    "softmax_sum_max_error": 1.1920928955078125E-07,
+    "different_input_max_output_change": 0.9823995232582092,
+    "numpy_reference_max_error": 6.556510925292969E-07,
+    "numpy_reference_mean_error": 1.253721015892495E-09,
+    "cpu_seconds": 0.0207737000000634,
+    "quality_benchmark": "No independent exam benchmark; synthetic and author's public example smoke tests only",
+    "environment": {
+      "numpy": "2.5.4",
+      "onnx": "1.23.2",
+      "onnxruntime": "1.31.1",
+      "h5py": "3.16.0"
+    },
+    "source_example": {
+      "executed": true,
+      "file": "upstream-example.png",
+      "source_sha256": "573b9c58d9f90a2f88c07fa888af966004ad0910e8489d1a85a16dfabe89d8d1",
+      "size": [
+        2459,
+        2215
+      ],
+      "samples": {
+        "printed_region": {
+          "x": 1000,
+          "y": 400,
+          "ink_pixels": 8399,
+          "mean_handwriting_probability_on_ink": 0.04933539032936096,
+          "class_counts_on_ink": [
+            7945,
+            310,
+            144
+          ]
+        },
+        "handwritten_region": {
+          "x": 1000,
+          "y": 1000,
+          "ink_pixels": 2450,
+          "mean_handwriting_probability_on_ink": 0.9312226176261902,
+          "class_counts_on_ink": [
+            58,
+            2392,
+            0
+          ]
+        }
+      },
+      "limitation": "Author's public example; not independent Chinese exam evaluation"
+    }
+  }
+}

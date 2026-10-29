@@ -1,0 +1,62 @@
+{
+  "onnx_checker": true,
+  "input_shape": [
+    1,
+    3,
+    256,
+    256
+  ],
+  "output_shape": [
+    1,
+    3,
+    256,
+    256
+  ],
+  "finite_probabilities": true,
+  "softmax_sum_max_error": 1.1920928955078125e-07,
+  "different_input_max_output_change": 0.9823995232582092,
+  "numpy_reference_max_error": 6.556510925292969e-07,
+  "numpy_reference_mean_error": 1.253721015892495e-09,
+  "cpu_seconds": 0.0207737000000634,
+  "quality_benchmark": "No independent exam benchmark; synthetic and author's public example smoke tests only",
+  "environment": {
+    "numpy": "2.5.4",
+    "onnx": "1.23.2",
+    "onnxruntime": "1.31.1",
+    "h5py": "3.16.0"
+  },
+  "source_example": {
+    "executed": true,
+    "file": "upstream-example.png",
+    "source_sha256": "573b9c58d9f90a2f88c07fa888af966004ad0910e8489d1a85a16dfabe89d8d1",
+    "size": [
+      2459,
+      2215
+    ],
+    "samples": {
+      "printed_region": {
+        "x": 1000,
+        "y": 400,
+        "ink_pixels": 8399,
+        "mean_handwriting_probability_on_ink": 0.04933539032936096,
+        "class_counts_on_ink": [
+          7945,
+          310,
+          144
+        ]
+      },
+      "handwritten_region": {
+        "x": 1000,
+        "y": 1000,
+        "ink_pixels": 2450,
+        "mean_handwriting_probability_on_ink": 0.9312226176261902,
+        "class_counts_on_ink": [
+          58,
+          2392,
+          0
+        ]
+      }
+    },
+    "limitation": "Author's public example; not independent Chinese exam evaluation"
+  }
+}
