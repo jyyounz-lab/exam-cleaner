@@ -2,7 +2,7 @@
 
 依 v1.1 規劃製作的瀏覽器本機工具。流程為：保留原圖 → 校正 → AI 優先 → 半自動調整 → 手動精修 → 確認匯出。AI 結果滿意即可直接匯出，後兩層按需使用。
 
-目前為 **0.4.0 實驗版**，已整合真正的預訓練分割模型，並非把色彩規則稱為 AI。中文兒童考卷品質、iPhone／Android 實機速度仍待驗收；無法保證恢復被手寫完全遮住的題目。
+目前為 **0.4.0 實驗版**，已發布至 [GitHub Pages](https://jyyounz-lab.github.io/exam-cleaner/)，已整合真正的預訓練分割模型，並非把色彩規則稱為 AI。中文兒童考卷品質、iPhone／Android 實機速度仍待驗收；無法保證恢復被手寫完全遮住的題目。
 
 ## 執行
 
@@ -94,11 +94,12 @@ GitHub Pages 部署設定保存在 `.github/workflows/pages.yml`；`.openai/host
 
 此版新增人工確認的同字取樣，並改善成果畫面的細筆刷操作。AI 模型與 0.3.0 清除策略保持一致；不是 OCR 重排或自動補字。沒有清楚同字、字體大小不同、完整遮擋的內容仍需人工確認。取樣會包含選框中的內容，應避開圈線；大範圍陰影或圖案的紙色銜接仍可能可見。
 
-本機文字修補驗證已完成；使用者已要求改以 GitHub Pages 發布；使用者已明確同意公開本專案原始碼與 Git 歷史。原 Sites 私人網站維持 0.2.0。
+0.4.0 已發布至 GitHub Pages。使用者已明確同意公開本專案原始碼與 Git 歷史；原 Sites 私人網站維持 0.2.0。
 
 ## GitHub Pages 與後續更新
 
-- 儲存庫：`jyyounz-lab/exam-cleaner`，網站路徑為 `/exam-cleaner/`。
+- [公開網站](https://jyyounz-lab.github.io/exam-cleaner/) · [GitHub 儲存庫](https://github.com/jyyounz-lab/exam-cleaner) · [自動部署紀錄](https://github.com/jyyounz-lab/exam-cleaner/actions/workflows/pages.yml)。
+- 2026-10-30 已完成 GitHub Linux CI 與正式網址各 29 項瀏覽器檢查，核心測試 22 項通過；線上模型雜湊與本機相同。報告見 `docs/pages-ci-validation.json` 與 `docs/pages-live-validation.json`。
 - 將已確認的程式變更提交並推送至 `main`，GitHub Actions 會依序安裝鎖定版本、執行核心測試、建置、驗證路徑與模型、執行瀏覽器回歸，全部通過才部署 `dist/`。
 - 單純修改本機檔案尚未推送時，網站不會更新。README 與 `docs/` 的純文件變更不重建網站；可從 Actions 手動執行。
 - 部署失敗時保留上一個成功版本。網站更新後重新整理即可載入新版；離線快取更新可能需要關閉舊分頁再重開。
