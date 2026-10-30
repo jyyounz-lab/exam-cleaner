@@ -18,7 +18,13 @@ try {
   for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 1000 }); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `home overflow ${width}`); checks.push(`home responsive ${width}`); }
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.getByRole('button', { name: /先用示範考卷試試/ }).click(); await page.getByRole('button', { name: /完成校正，AI 清除與修復/ }).waitFor(); checks.push('demo imports');
+  // Fixed synthetic pixels keep image-quality assertions independent of OS fonts.
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('input[type=file]').first().setInputFiles('tests/fixtures/browser-demo.png');
+  await page.locator('.document-title span[title="browser-demo.png"]').waitFor();
+  checks.push('fixed synthetic fixture imports for cross-platform image regression');
   const [original] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '下載原圖', exact: true }).click()]); await original.saveAs(`${dir}/original.png`); const originalHash = createHash('sha256').update(await readFile(`${dir}/original.png`)).digest('hex');
+  assert.equal(originalHash, '652c39695ce1ba10a074ea8bbc60658cc01b7dedbfee1176f15a9cdd867887c0');
   await page.getByRole('button', { name: /完成校正，AI 清除與修復/ }).click(); console.log('Started actual OpenCV calibration and ONNX browser WASM inference');
   await page.getByText('AI 清除與修復完成', { exact: true }).waitFor({ timeout: 180000 });
   await page.getByRole('button', { name: '確認匯出', exact: true }).waitFor({ state: 'visible' }); await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent === '確認匯出')?.disabled, { timeout: 90000 });
