@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { canvasFor } from './images';
-import type { Point, Rect, Stroke, Tool } from './core';
+import type { Point, Rect, BrushStroke, Tool } from './core';
 
-type Props = { image: ImageData; mask: Uint8Array; keep: Uint8Array; view: string; tool: Tool; brush: number; zoom: number; crop: boolean; quad: Point[]; region: Rect | null; disabled: boolean; onZoom: (z: number) => void; onQuad: (q: Point[]) => void; onStroke: (s: Stroke) => void; onRegion: (r: Rect) => void };
+type Props = { image: ImageData; mask: Uint8Array; keep: Uint8Array; view: string; tool: Tool; brush: number; zoom: number; crop: boolean; quad: Point[]; region: Rect | null; sample: Rect | null; disabled: boolean; onZoom: (z: number) => void; onQuad: (q: Point[]) => void; onStroke: (s: BrushStroke) => void; onRegion: (r: Rect) => void; onSample: (r: Rect) => void; onPatch: (p: Point) => void };
 export default function Stage(p: Props) {
   const board = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), overlay = useRef<HTMLCanvasElement>(null);
-  const drag = useRef<{ kind: 'corner' | 'stroke' | 'region' | 'pan'; corner?: number; points: Point[]; quad?: Point[]; startX: number; startY: number; scrollX: number; scrollY: number } | null>(null);
+  const drag = useRef<{ kind: 'corner' | 'stroke' | 'region' | 'pan' | 'patch'; corner?: number; points: Point[]; quad?: Point[]; startX: number; startY: number; scrollX: number; scrollY: number } | null>(null);
   const [fit, setFit] = useState(600);
   const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<{ distance: number; zoom: number; current: number } | null>(null);
   useEffect(() => { const el = board.current!; const r = new ResizeObserver(() => setFit(Math.min(720, Math.max(180, el.clientWidth - 48)))); r.observe(el); return () => r.disconnect(); }, []);
@@ -30,7 +30,7 @@ export default function Stage(p: Props) {
     if (fingers.current.size === 2) { const [a, b] = [...fingers.current.values()]; pinch.current = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), zoom: p.zoom, current: p.zoom }; drag.current = null; drawOverlay(); e.currentTarget.setPointerCapture(e.pointerId); return; }
     const at = point(e), common = { points: [at], startX: e.clientX, startY: e.clientY, scrollX: board.current!.scrollLeft, scrollY: board.current!.scrollTop };
     if (p.crop) { const nearest = p.quad.map((v, i) => ({ i, d: Math.hypot(v.x - at.x, (v.y - at.y) * p.image.height / p.image.width) })).sort((a, b) => a.d - b.d)[0]; if (nearest.d > 0.09) return; drag.current = { ...common, kind: 'corner', corner: nearest.i, quad: p.quad.map(v => ({ ...v })) }; }
-    else drag.current = { ...common, kind: p.view !== 'mask' || p.tool === 'pan' ? 'pan' : p.tool === 'region' ? 'region' : 'stroke' };
+    else drag.current = { ...common, kind: p.tool === 'sample' ? 'region' : p.tool === 'text' && p.sample && p.view === 'result' ? 'patch' : p.tool === 'text' || p.view === 'base' || p.tool === 'pan' ? 'pan' : p.tool === 'region' ? 'region' : 'stroke' };
     e.currentTarget.setPointerCapture(e.pointerId);
     if (drag.current.kind === 'stroke') drawDraft(at, at);
   }
@@ -38,7 +38,8 @@ export default function Stage(p: Props) {
   function move(e: React.PointerEvent<HTMLCanvasElement>) {
     if (fingers.current.has(e.pointerId)) fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch.current && fingers.current.size >= 2) { const [a, b] = [...fingers.current.values()]; const q = pinch.current; q.current = Math.max(100, Math.min(800, Math.round(q.zoom * Math.hypot(a.x - b.x, a.y - b.y) / q.distance))); overlay.current!.parentElement!.style.width = `${fit * q.current / 100}px`; return; }
-    const d = drag.current; if (!d) return; const at = point(e);
+    const d = drag.current, at = point(e);
+    if (!d) { if (p.tool === 'text' && p.sample && p.view === 'result') { drawOverlay(); const c = overlay.current!, ctx = c.getContext('2d')!; ctx.strokeStyle = '#4761c2'; ctx.lineWidth = c.width / 500; ctx.strokeRect((at.x-p.sample.w/2)*c.width,(at.y-p.sample.h/2)*c.height,p.sample.w*c.width,p.sample.h*c.height); } return; }
     if (d.kind === 'corner') { d.quad![d.corner!] = at; drawOverlay(d.quad); }
     if (d.kind === 'stroke') { drawDraft(d.points.at(-1)!, at); d.points.push(at); }
     if (d.kind === 'region') { drawOverlay(); const a = d.points[0], c = overlay.current!, ctx = c.getContext('2d')!; ctx.strokeStyle = '#4761c2'; ctx.lineWidth = c.width / 300; ctx.strokeRect(a.x * c.width, a.y * c.height, (at.x - a.x) * c.width, (at.y - a.y) * c.height); d.points[1] = at; }
@@ -49,7 +50,7 @@ export default function Stage(p: Props) {
     if (pinch.current) { p.onZoom(pinch.current.current); pinch.current = null; drag.current = null; if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); return; }
     const d = drag.current; if (!d) return; drag.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    if (!cancel) { if (d.kind === 'corner') p.onQuad(d.quad!); if (d.kind === 'stroke') p.onStroke({ tool: p.tool as Stroke['tool'], radius: p.brush / 2000, points: d.points }); if (d.kind === 'region' && d.points[1]) { const [a, b] = d.points; if (Math.abs(a.x - b.x) > 0.005 && Math.abs(a.y - b.y) > 0.005) p.onRegion({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }); } }
+    if (!cancel) { if (d.kind === 'corner') p.onQuad(d.quad!); if (d.kind === 'patch') p.onPatch(point(e)); if (d.kind === 'stroke') p.onStroke({ tool: p.tool as BrushStroke['tool'], radius: p.brush / 2000, points: d.points }); if (d.kind === 'region' && d.points[1]) { const [a, b] = d.points; if (Math.abs(a.x - b.x) > 0.005 && Math.abs(a.y - b.y) > 0.005) { const rect = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }; if (p.tool === 'sample') p.onSample(rect); else p.onRegion(rect); } } }
     drawOverlay();
   }
   return <div className="board" ref={board}><div className="paper-stage" style={{ width: fit * p.zoom / 100, aspectRatio: `${p.image.width}/${p.image.height}` }}>

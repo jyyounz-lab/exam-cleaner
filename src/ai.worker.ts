@@ -12,7 +12,7 @@ self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
     const progress = (percent: number, message: string) => self.postMessage({ type: 'progress', percent, message });
     if (!session) {
       progress(2, '正在載入本機模型與推論引擎…');
-      const response = await fetch('/models/phti-fcnn.onnx');
+      const response = await fetch(`${import.meta.env.BASE_URL}models/phti-fcnn.onnx`);
       if (!response.ok) throw new Error('模型尚未下載完成，請連線後重試。');
       const model = await response.arrayBuffer();
       session = await ort.InferenceSession.create(model, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
@@ -42,6 +42,6 @@ self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
     for (let i = 0; i < n; i++) { handwriting[i] /= weights[i] || 1; print[i] /= weights[i] || 1; }
     progress(99, '正在補齊筆畫、辨識答案區與保護底線…');
     const hints = refineInk(image, { handwriting, print }, binary);
-    self.postMessage({ type: 'result', handwriting, print, hints, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.structure.buffer, hints.lineRepair.buffer]);
+    self.postMessage({ type: 'result', handwriting, print, hints, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.handInk.buffer, hints.boldInk.buffer, hints.printInk.buffer, hints.picture.buffer, hints.structure.buffer, hints.lineRepair.buffer]);
   } catch (error) { self.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };

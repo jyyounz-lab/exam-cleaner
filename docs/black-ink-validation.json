@@ -1,0 +1,336 @@
+{
+  "version": "0.3.0",
+  "reportDate": "2026-10-30",
+  "testedDate": "2026-10-29",
+  "baseline": "f3dcc218665e8d9b178d36baf6169afa7f1e0563",
+  "kind": "synthetic_development_regression_not_real_exam_accuracy",
+  "cases": [
+    {
+      "id": "black-flat",
+      "elapsed": 6731.840000003576,
+      "before": {
+        "ink": 2580,
+        "selected": 0,
+        "coverage": 0,
+        "inkErrorRemoved": 0,
+        "printed": 9786,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "after": {
+        "ink": 2580,
+        "selected": 2580,
+        "coverage": 1,
+        "inkErrorRemoved": 1,
+        "printed": 9786,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "regions": [
+        {
+          "name": "black_without_underline",
+          "before": {
+            "ink": 955,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 955,
+            "selected": 955,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "gray_ink_without_underline",
+          "before": {
+            "ink": 944,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 944,
+            "selected": 944,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "isolated_black_digit",
+          "before": {
+            "ink": 341,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 341,
+            "selected": 341,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "mixed_density_stroke",
+          "before": {
+            "ink": 340,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 340,
+            "selected": 340,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "black-shadow",
+      "elapsed": 5284.554999999702,
+      "before": {
+        "ink": 2572,
+        "selected": 0,
+        "coverage": 0,
+        "inkErrorRemoved": 0,
+        "printed": 11082,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "after": {
+        "ink": 2572,
+        "selected": 2572,
+        "coverage": 1,
+        "inkErrorRemoved": 0.9940588097958983,
+        "printed": 11082,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "regions": [
+        {
+          "name": "black_without_underline",
+          "before": {
+            "ink": 950,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 950,
+            "selected": 950,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9947910092722948,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "gray_ink_without_underline",
+          "before": {
+            "ink": 942,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 942,
+            "selected": 942,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9916919536185995,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "isolated_black_digit",
+          "before": {
+            "ink": 341,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 341,
+            "selected": 341,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9949224387897071,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "mixed_density_stroke",
+          "before": {
+            "ink": 339,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 339,
+            "selected": 339,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9955913276774708,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "black-large",
+      "elapsed": 9307.39999999851,
+      "before": {
+        "ink": 5201,
+        "selected": 0,
+        "coverage": 0,
+        "inkErrorRemoved": 0,
+        "printed": 20476,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "after": {
+        "ink": 5201,
+        "selected": 5201,
+        "coverage": 1,
+        "inkErrorRemoved": 1,
+        "printed": 20476,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "regions": [
+        {
+          "name": "black_without_underline",
+          "before": {
+            "ink": 1934,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 1934,
+            "selected": 1934,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "gray_ink_without_underline",
+          "before": {
+            "ink": 1922,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 1922,
+            "selected": 1922,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "isolated_black_digit",
+          "before": {
+            "ink": 670,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 670,
+            "selected": 670,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "mixed_density_stroke",
+          "before": {
+            "ink": 675,
+            "selected": 0,
+            "coverage": 0,
+            "inkErrorRemoved": 0,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          },
+          "after": {
+            "ink": 675,
+            "selected": 675,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        }
+      ]
+    }
+  ],
+  "mode": "auto",
+  "metric": "Current auto selection versus 0.2.0 selection with identical ONNX predictions; both outputs use the current v3 repair worker.",
+  "limitation": "Three synthetic cases check unruled black/gray strokes and print protection. They do not measure real-exam accuracy or generalize the coarse-black mode."
+}

@@ -1,9 +1,10 @@
 export type Point = { x: number; y: number };
 export type Rect = { x: number; y: number; w: number; h: number };
-export type Tool = 'erase' | 'restore' | 'protect' | 'unprotect' | 'region' | 'pan';
-export type Stroke = { tool: Exclude<Tool, 'region' | 'pan'>; radius: number; points: Point[] };
-export type Edit = { threshold: number; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
-export const initialEdit = (): Edit => ({ threshold: 0.8, color: 'none', protectPrint: true, allowNeutralInk: false, autoAnswers: true, repair: 'paper', grow: true, region: null, strokes: [] });
+export type Tool = 'erase' | 'restore' | 'protect' | 'unprotect' | 'region' | 'pan' | 'sample' | 'text';
+export type BrushStroke = { tool: Exclude<Tool, 'region' | 'pan' | 'sample' | 'text'>; radius: number; points: Point[] };
+export type Stroke = BrushStroke | TextPatch;
+export type Edit = { threshold: number; inkType: 'auto'|'black'; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
+export const initialEdit = (): Edit => ({ threshold: 0.8, inkType: 'auto', color: 'none', protectPrint: true, allowNeutralInk: false, autoAnswers: true, repair: 'paper', grow: true, region: null, strokes: [] });
 export type History = { past: Edit[]; present: Edit; future: Edit[] };
 export function changeHistory(h: History, next: Edit | 'undo' | 'redo'): History {
   if (next === 'undo') return h.past.length ? { past: h.past.slice(0, -1), present: h.past.at(-1)!, future: [h.present, ...h.future] } : h;
@@ -18,7 +19,8 @@ export function validQuad(q: Point[]): boolean {
 }
 export function drawMasks(strokes: Stroke[], width: number, height: number) {
   const erase = new Uint8Array(width * height), reject = new Uint8Array(width * height), keep = new Uint8Array(width * height);
-  const paint = (p: Point, radius: number, tool: Stroke['tool']) => {
+  const patches = strokes.some(s => s.tool === 'text') ? new Int32Array(width * height) : undefined;
+  const paint = (p: Point, radius: number, tool: BrushStroke['tool']) => {
     const cx = p.x * width, cy = p.y * height, r = Math.max(0.75, radius * width), rr = r * r;
     for (let y = Math.max(0, Math.floor(cy - r)); y <= Math.min(height - 1, Math.ceil(cy + r)); y++) {
       for (let x = Math.max(0, Math.floor(cx - r)); x <= Math.min(width - 1, Math.ceil(cx + r)); x++) {
@@ -26,12 +28,19 @@ export function drawMasks(strokes: Stroke[], width: number, height: number) {
         const i = y * width + x;
         if (tool === 'erase') { erase[i] = 1; reject[i] = 0; }
         if (tool === 'restore') { erase[i] = 0; reject[i] = 1; }
+        if (patches && (tool === 'erase' || tool === 'restore')) patches[i] = 0;
         if (tool === 'protect') keep[i] = 1;
         if (tool === 'unprotect') keep[i] = 0;
       }
     }
   };
-  for (const stroke of strokes) {
+  for (let s = 0; s < strokes.length; s++) {
+    const stroke = strokes[s];
+    if (stroke.tool === 'text') {
+      const b = patchBounds(stroke, width, height);
+      for (let y = Math.max(0, b.y); y < Math.min(height, b.y + b.h); y++) for (let x = Math.max(0, b.x); x < Math.min(width, b.x + b.w); x++) { const i = y * width + x; patches![i] = s + 1; erase[i] = 0; reject[i] = 0; }
+      continue;
+    }
     if (!stroke.points.length) continue;
     paint(stroke.points[0], stroke.radius, stroke.tool);
     for (let j = 1; j < stroke.points.length; j++) {
@@ -40,7 +49,7 @@ export function drawMasks(strokes: Stroke[], width: number, height: number) {
       for (let k = 1; k <= steps; k++) paint({ x: a.x + (b.x - a.x) * k / steps, y: a.y + (b.y - a.y) * k / steps }, stroke.radius, stroke.tool);
     }
   }
-  return { erase, reject, keep };
+  return { erase, reject, keep, patches };
 }
 export function colorCandidate(r: number, g: number, b: number, mode: Edit['color']): boolean {
   const red = r > g * 1.2 + 14 && r > b * 1.12 + 10 && Math.min(g, b) < 210;
@@ -51,7 +60,10 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
   const { width: w, height: h, data } = image, n = w * h;
   if (ai && (ai.handwriting.length !== n || ai.print.length !== n)) throw new Error('AI 遮罩尺寸與底圖不符，請重新分析。');
   const manual = drawMasks(edit.strokes, w, h), candidate = new Uint8Array(n), mask = new Uint8Array(n);
-  for (let i = 0; i < n; i++) candidate[i] = Number(!!manual.erase[i] || !!ai && (ai.hints ? ai.hints.confidence[i]/255 : ai.handwriting[i]) >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
+  for (let i = 0; i < n; i++) {
+    const black = edit.inkType !== 'black' || edit.allowNeutralInk && edit.region || ai?.hints?.boldInk?.[i];
+    candidate[i] = Number(!!manual.erase[i] || black && !!ai && Math.max(ai.hints ? ai.hints.confidence[i]/255 : ai.handwriting[i], edit.allowNeutralInk && edit.region ? ai.handwriting[i] : 0) >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
+  }
   let count = 0, protectedCount = 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
@@ -60,13 +72,13 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
     const region = edit.region, allowed = !region || x / w >= region.x && x / w <= region.x + region.w && y / h >= region.y && y / h <= region.y + region.h;
     const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
     const neutralInk = Math.max(r, g, b) - Math.min(r, g, b) < 26 && Math.min(r, g, b) < 245;
-    const supported = !!ai?.hints?.colorInk[i] || !!edit.autoAnswers && !!ai?.hints?.answerInk[i];
+    const supported = !!ai?.hints?.colorInk[i] || !!ai?.hints?.handInk?.[i] || !!edit.autoAnswers && !!ai?.hints?.answerInk[i];
     const protectNeutral = neutralInk && !(edit.allowNeutralInk && region) && !supported && !manual.erase[i];
-    const protectedPixel = manual.keep[i] || protectNeutral || !!ai?.hints?.structure[i] && !ai?.hints?.lineRepair?.[i] && !manual.erase[i] || edit.protectPrint && ai && ai.print[i] >= 0.65 && !supported && !manual.erase[i];
+    const protectedPixel = manual.keep[i] || protectNeutral || !!ai?.hints?.structure[i] && !ai?.hints?.lineRepair?.[i] && !manual.erase[i] || edit.protectPrint && ai && (ai.print[i] >= 0.65 && !supported || ai.hints?.printInk?.[i] || ai.hints?.picture?.[i] || edit.inkType==='black' && !ai.hints?.boldInk?.[i] && neutralInk && !(edit.allowNeutralInk&&region)) && !manual.erase[i];
     if (selected && protectedPixel) protectedCount++;
     if (selected && allowed && !manual.reject[i] && !protectedPixel) { mask[i] = 255; count++; }
   }
-  return { mask, keep: manual.keep, count, protectedCount };
+  return { mask, keep: manual.keep, patches: manual.patches, count, protectedCount };
 }
 export function resizeProbabilities(input: Float32Array, width: number, height: number, outW: number, outH: number) {
   const out = new Float32Array(outW * outH);
@@ -97,3 +109,4 @@ export function sauvola(image: { width: number; height: number; data: Uint8Clamp
   return out;
 }
 import type { InkHints } from './refine';
+import { patchBounds, type TextPatch } from './textRepair.ts';

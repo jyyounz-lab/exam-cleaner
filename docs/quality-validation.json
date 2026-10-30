@@ -1,16 +1,16 @@
 {
-  "version": "0.2.0",
-  "date": "2026-10-29",
+  "version": "0.3.0",
+  "reportDate": "2026-10-30",
+  "testedDate": "2026-10-29",
   "kind": "synthetic_regression",
   "baselineCommit": "c94ea035d1c1eaed601c3db211b610810cd9f1bb",
-  "metric": "Ink-region RGB absolute error relative to the independently rendered clean reference; pixels overlapping printed content are excluded from ink error.",
-  "limitation": "Two synthetic pages used during development, not an independent real-exam accuracy benchmark.",
-  "passed": true,
+  "metric": "Selection comparison with the 0.1.0 mask logic; both outputs use the current v3 repair worker. RGB error is measured only against the synthetic clean reference.",
+  "limitation": "These two synthetic cases are regression checks, not recognition accuracy on real exams.",
   "cases": [
     {
       "id": "flat",
       "regions": 4,
-      "elapsed": 2494.595000002533,
+      "elapsed": 11607.629999998957,
       "before": {
         "inkPixels": 3607,
         "selectedInk": 2125,
@@ -22,9 +22,9 @@
       },
       "after": {
         "inkPixels": 3607,
-        "selectedInk": 3603,
-        "coverage": 0.9988910451899086,
-        "inkErrorRemoved": 0.9988598325990878,
+        "selectedInk": 3595,
+        "coverage": 0.9966731355697256,
+        "inkErrorRemoved": 0.9986702455989362,
         "printPixels": 23016,
         "changedPrint": 0,
         "pixelsChangedOutsideMask": 0
@@ -64,9 +64,9 @@
           },
           "after": {
             "inkPixels": 672,
-            "selectedInk": 672,
-            "coverage": 1,
-            "inkErrorRemoved": 1,
+            "selectedInk": 664,
+            "coverage": 0.9880952380952381,
+            "inkErrorRemoved": 0.9977134956928639,
             "printPixels": 0,
             "changedPrint": 0,
             "pixelsChangedOutsideMask": 0
@@ -140,7 +140,7 @@
     {
       "id": "shadow",
       "regions": 6,
-      "elapsed": 2577.3199999965727,
+      "elapsed": 11016.234999999404,
       "before": {
         "inkPixels": 3607,
         "selectedInk": 2151,

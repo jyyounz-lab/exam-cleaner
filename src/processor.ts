@@ -4,7 +4,7 @@ const pending = new Map<number, { resolve: (image: ImageData) => void; reject: (
 function stop(message: string) { worker?.terminate(); worker = undefined; for (const p of pending.values()) { clearTimeout(p.timer); p.reject(new Error(message)); } pending.clear(); }
 export function processImage(kind: 'clean' | 'rectify', image: ImageData, extra: { mask?: Uint8Array; quad?: Point[]; repair?: 'paper'|'texture'; structure?: Uint8Array; lineRepair?: Uint8Array }): Promise<ImageData> {
   if (!worker) {
-    worker = new Worker('/cv.worker.v2.js');
+    worker = new Worker(`${import.meta.env.BASE_URL}cv.worker.v3.js`);
     worker.onmessage = ({ data }) => { const p = pending.get(data.id); if (!p) return; pending.delete(data.id); clearTimeout(p.timer); if (data.error) p.reject(new Error(data.error)); else p.resolve(new ImageData(data.pixels, data.width, data.height)); };
     worker.onerror = () => stop('影像處理中斷，原圖仍保留。請重試或重新開啟頁面。');
   }

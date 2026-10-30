@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "version": "0.3.0",
+  "date": "2026-10-30",
+  "kind": "synthetic_draft_migration",
+  "checks": [
+    "v1 hints rebuilt to v2 without re-running model",
+    "original bytes preserved",
+    "past, present, future and manual protection preserved",
+    "new ink mode defaulted for all history entries",
+    "no page errors"
+  ]
+}
