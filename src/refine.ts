@@ -1,5 +1,6 @@
+import { printLayout } from './printLayout.ts';
 type Pixels = { width: number; height: number; data: Uint8ClampedArray };
-export type InkHints = { version: 2; confidence: Uint8Array; colorInk: Uint8Array; answerInk: Uint8Array; handInk: Uint8Array; boldInk: Uint8Array; printInk: Uint8Array; picture: Uint8Array; structure: Uint8Array; lineRepair: Uint8Array; answerRegions: number };
+export type InkHints = { version: 3; confidence: Uint8Array; colorInk: Uint8Array; answerInk: Uint8Array; handInk: Uint8Array; boldInk: Uint8Array; printInk: Uint8Array; picture: Uint8Array; structure: Uint8Array; lineRepair: Uint8Array; answerRegions: number };
 
 export function refineInk(image: Pixels, prediction: { handwriting: Float32Array; print: Float32Array }, binary: Uint8Array): InkHints {
   const { width: w, height: h, data } = image, n = w * h;
@@ -14,7 +15,7 @@ export function refineInk(image: Pixels, prediction: { handwriting: Float32Array
     const from=Math.floor(samples.length*.75),to=Math.max(from+1,Math.ceil(samples.length*.95));
     for(let k=from;k<to;k++)for(let c=0;c<3;c++)paper[(cy*cols+cx)*3+c]+=data[samples[k]+c]/(to-from);
   }
-  const weakColor = new Uint8Array(n), strongColor = new Uint8Array(n), neutralDark = new Uint8Array(n), lineRepair = new Uint8Array(n), toned = new Uint8Array(n);
+  const strength = new Uint8Array(n), weakColor = new Uint8Array(n), strongColor = new Uint8Array(n), neutralDark = new Uint8Array(n), lineRepair = new Uint8Array(n), toned = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
     const gx=Math.max(0,Math.min(cols-1,(i%w)/cell-.5)),gy=Math.max(0,Math.min(rowsCount-1,Math.floor(i/w)/cell-.5));
@@ -25,6 +26,7 @@ export function refineInk(image: Pixels, prediction: { handwriting: Float32Array
     const red = Math.min(nr-ng,nr-nb);
     const blue = Math.min(nb-nr,nb-ng);
     const chroma = Math.max(r,g,b)-Math.min(r,g,b);
+    strength[i]=Math.max(0,Math.min(255,255-(nr+ng+nb)/3));
     toned[i]=Number((nr+ng+nb)/3<210);
     weakColor[i] = Number(contrast > 8 && Math.max(red, blue) > 4 && (chroma > 9 || Math.min(r,g,b) > 205));
     strongColor[i] = Number(contrast > 18 && Math.max(red, blue) > 16 && chroma > 18);
@@ -79,6 +81,9 @@ export function refineInk(image: Pixels, prediction: { handwriting: Float32Array
     for (let y = Math.max(0,line.y-above); y <= Math.min(h-1,line.y+12); y++) for (let x = Math.max(0,line.x0-2); x < Math.min(w,line.x1+Math.min(24,length*.12)); x++) bands[y*w+x] = 1;
     answerRegions++;
   }
+  const layout = printLayout(w,h,strength,strongColor,prediction.print);
+  printInk.set(layout.keep); answerRegions += layout.pairs;
+  for(let i=0;i<n;i++) if(layout.answers[i]) bands[i]=1;
   const visited = new Uint8Array(n), queue = new Int32Array(n*2);
   const components: { start: number; end: number; x0: number; x1: number; y0: number; y1: number; colors: number; inAnswer: number; meanHand: number; meanPrint: number; maxHand: number; strongHand: number; colorLayer: boolean }[] = [];
   let tail = 0;
@@ -125,7 +130,7 @@ export function refineInk(image: Pixels, prediction: { handwriting: Float32Array
     const freeHand = !c.colorLayer && small && !answer && !printed && ch >= 7 && size >= 12 && (tonedPixels/(cw*ch)<.6 || ch>cw*3 && size/(cw*ch)>.8) && meanHand >= .55 && meanHand > meanPrint+.25 && maxHand > .88 && strongHand/size >= .35;
     if (printed&&!c.colorLayer) for(let q=start;q<end;q++) printInk[queue[q]]=1;
     if (!colored && !answer && !freeHand) continue;
-    const score = Math.round(255 * (colored ? Math.max(.86,maxHand) : Math.max(.83,maxHand)));
+    const score = Math.round(255 * (colored ? Math.max(.86,maxHand) : Math.max(.83,Math.min(maxHand,meanHand+.15))));
     for(let q=start;q<end;q++){const i=queue[q];confidence[i]=score;if(colored&&weakColor[i])colorInk[i]=1;if(answer)answerInk[i]=1;if(freeHand)handInk[i]=1;}
   }
   // Include faint fringes connected to accepted strokes, but keep structural lines separate.
@@ -153,5 +158,5 @@ export function refineInk(image: Pixels, prediction: { handwriting: Float32Array
       if(dx*dx+dy*dy>(radius+1)**2)continue;const xx=x+dx,yy=y+dy;if(xx>=0&&xx<w&&yy>=0&&yy<h)boldInk[yy*w+xx]=1;
     }
   }
-  return {version:2,confidence,colorInk,answerInk,handInk,boldInk,printInk,picture,structure,lineRepair,answerRegions};
+  return {version:3,confidence,colorInk,answerInk,handInk,boldInk,printInk,picture,structure,lineRepair,answerRegions};
 }

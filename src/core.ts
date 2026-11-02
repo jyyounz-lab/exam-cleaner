@@ -65,10 +65,10 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
     candidate[i] = Number(!!manual.erase[i] || black && !!ai && Math.max(ai.hints ? ai.hints.confidence[i]/255 : ai.handwriting[i], edit.allowNeutralInk && edit.region ? ai.handwriting[i] : 0) >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
   }
   let count = 0, protectedCount = 0;
+  const blocked = new Uint8Array(n);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
-    let selected = candidate[i];
-    if (edit.grow && !selected) for (let dy = -2; dy <= 2 && !selected; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < w && yy >= 0 && yy < h && candidate[yy * w + xx]) { selected = 1; break; } }
+    const selected = candidate[i];
     const region = edit.region, allowed = !region || x / w >= region.x && x / w <= region.x + region.w && y / h >= region.y && y / h <= region.y + region.h;
     const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
     const neutralInk = Math.max(r, g, b) - Math.min(r, g, b) < 26 && Math.min(r, g, b) < 245;
@@ -76,8 +76,18 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
     const protectNeutral = neutralInk && !(edit.allowNeutralInk && region) && !supported && !manual.erase[i];
     const protectedPixel = manual.keep[i] || protectNeutral || !!ai?.hints?.structure[i] && !ai?.hints?.lineRepair?.[i] && !manual.erase[i] || edit.protectPrint && ai && (ai.print[i] >= 0.65 && !supported || ai.hints?.printInk?.[i] || ai.hints?.picture?.[i] || edit.inkType==='black' && !ai.hints?.boldInk?.[i] && neutralInk && !(edit.allowNeutralInk&&region)) && !manual.erase[i];
     if (selected && protectedPixel) protectedCount++;
-    if (selected && allowed && !manual.reject[i] && !protectedPixel) { mask[i] = 255; count++; }
+    blocked[i] = Number(!allowed || !!manual.reject[i] || !!protectedPixel);
+    if (selected && !blocked[i]) mask[i] = 255;
   }
+  // Only accepted pixels can grow; two one-pixel steps cannot jump a protected stroke.
+  if (edit.grow) for (let step=0;step<2;step++) {
+    const previous=mask.slice();
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const i=y*w+x;if(previous[i]||blocked[i])continue;
+      for(let dy=-1;dy<=1&&!mask[i];dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx>=0&&xx<w&&yy>=0&&yy<h&&previous[yy*w+xx]){mask[i]=255;break;}}
+    }
+  }
+  for(let i=0;i<n;i++)if(mask[i])count++;
   return { mask, keep: manual.keep, patches: manual.patches, count, protectedCount };
 }
 export function resizeProbabilities(input: Float32Array, width: number, height: number, outW: number, outH: number) {

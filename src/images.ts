@@ -14,7 +14,8 @@ export async function readImage(file: File): Promise<ImageData> {
   if (w * h > 64_000_000 || Math.min(w, h) < 120) throw new Error('請選擇 120 像素以上、6400 萬像素以內的圖片。');
   let bitmap: ImageBitmap | undefined;
   try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image', resizeWidth: Math.min(w, MAX_LONG_EDGE), resizeQuality: 'high' });
+    // EXIF can swap width/height; keep small photos at their native oriented resolution.
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image', ...(w > MAX_LONG_EDGE ? { resizeWidth: MAX_LONG_EDGE } : {}), resizeQuality: 'high' });
     const scale = Math.min(1, MAX_LONG_EDGE / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);

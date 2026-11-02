@@ -2,9 +2,65 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { composeMask, drawMasks, validQuad, initialEdit, changeHistory, sauvola, colorCandidate } from '../src/core.ts';
 import { refineInk } from '../src/refine.ts';
+import { printLayout } from '../src/printLayout.ts';
 import { applyTextPatches, patchBounds, sampleText, type TextPatch } from '../src/textRepair.ts';
 import type { Stroke } from '../src/core.ts';
 const image = (w = 20, h = 20) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4).fill(255) });
+
+test('被保護的候選不能向周圍紙面擴張，已接受候選不能跨越保護線', () => {
+  const img=image(),ai={handwriting:new Float32Array(400),print:new Float32Array(400)};
+  ai.handwriting[210]=.99; ai.print[210]=.9;
+  assert.equal(composeMask(img,initialEdit(),ai).count,0);
+  ai.handwriting.fill(0);ai.print.fill(0);ai.handwriting[209]=.99;
+  for(let y=0;y<20;y++)ai.print[y*20+10]=.9;
+  const mask=composeMask(img,initialEdit(),ai).mask;
+  assert.equal(mask[209],255);assert.equal(mask[210],0);assert.equal(mask[211],0);
+});
+
+test('直排題目中模型誤判的字由上下印刷字保護',()=>{
+  const img=image(200,200),n=40000,ai={handwriting:new Float32Array(n),print:new Float32Array(n)};
+  for(const top of [30,55,80])for(let y=top;y<top+15;y++)for(let x=50;x<60;x++){
+    if(x>52&&y>top+2&&y<top+12)continue;
+    const i=y*200+x;img.data.set([30,30,30,255],i*4);ai.handwriting[i]=top===55?.99:.05;ai.print[i]=top===55?.01:.9;
+  }
+  const hints=refineInk(img,ai,sauvola(img));assert.equal(hints.printInk[60*200+51],1);
+  assert.equal(composeMask(img,initialEdit(),{...ai,hints}).count,0);
+});
+
+test('重複印刷括號即使全被模型判成手寫仍保留，括號內作答可清除',()=>{
+  const img=image(320,240),n=320*240,ai={handwriting:new Float32Array(n),print:new Float32Array(n)},bracketPixels:number[]=[];
+  for(const cx of [60,140,220]){
+    for(let dx=-9;dx<=9;dx++)for(const y of [40+Math.round(dx*dx/18),120-Math.round(dx*dx/18)]){
+      const i=y*320+cx+dx;img.data.set([30,30,30,255],i*4);ai.handwriting[i]=.99;bracketPixels.push(i);
+    }
+    for(let y=65;y<95;y++)for(let x=cx;x<cx+3;x++){
+      const i=y*320+x;img.data.set([125,125,125,255],i*4);ai.handwriting[i]=.95;
+    }
+  }
+  const hints=refineInk(img,ai,sauvola(img)),mask=composeMask(img,initialEdit(),{...ai,hints}).mask;
+  assert.equal(hints.answerRegions,3);for(const i of bracketPixels){assert.equal(hints.printInk[i],1);assert.equal(mask[i],0);}
+  assert.equal(mask[80*320+61],255);
+  assert.equal(composeMask(img,{...initialEdit(),autoAnswers:false},{...ai,hints}).mask[80*320+61],0);
+});
+
+test('連線題端點與接觸的細筆跡分開保護',()=>{
+  const img=image(240,240),n=240*240,ai={handwriting:new Float32Array(n),print:new Float32Array(n)};
+  const put=(x:number,y:number)=>{const i=y*240+x;img.data.set([30,30,30,255],i*4);ai.handwriting[i]=.99;};
+  for(const cx of [50,100,150]){
+    for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++)if(dx*dx+dy*dy<=9)put(cx+dx,50+dy);
+    for(let d=1;d<=40;d++){put(cx+Math.floor(d/2),50+d);put(cx+Math.floor(d/2)+1,50+d);}
+  }
+  const hints=refineInk(img,ai,sauvola(img)),mask=composeMask(img,initialEdit(),{...ai,hints}).mask;
+  for(const cx of [50,100,150]){assert.equal(mask[50*240+cx],0);assert.equal(mask[75*240+cx+12],255);}
+});
+
+test('零碎細筆與單一弧線不會被重複端點或括號規則保護',()=>{
+  const w=300,h=240,n=w*h,strength=new Uint8Array(n);
+  for(const cx of [40,100,160])for(let d=0;d<30;d++)for(let dx=0;dx<3;dx++)strength[(50+d)*w+cx+Math.floor(d/2)+dx]=200;
+  for(let dx=-9;dx<=9;dx++)strength[(150+Math.round(dx*dx/18))*w+100+dx]=200;
+  const result=printLayout(w,h,strength,new Uint8Array(n),new Float32Array(n));
+  assert.equal(result.keep.some(Boolean),false);assert.equal(result.pairs,0);
+});
 test('保留區與排除區在膨脹後仍完全不被清除', () => {
   const img = image(), ai = { handwriting: new Float32Array(400).fill(.99), print: new Float32Array(400) };
   const edit = initialEdit(); edit.strokes = [{ tool: 'protect', radius: .12, points: [{ x: .5, y: .5 }] }, { tool: 'restore', radius: .08, points: [{ x: .25, y: .25 }] }];
@@ -91,6 +147,7 @@ test('無底線黑筆依整段手寫證據選取，補齊低機率筆畫和淡�
   const hints=refineInk(img,ai,sauvola(img)), edit=initialEdit();
   const mask=composeMask(img,edit,{...ai,hints}).mask;
   assert.equal(hints.answerRegions,0);assert.equal(mask[78*160+72],255);assert.equal(mask[78*160+74],255);
+  assert.equal(composeMask(img,{...edit,threshold:.9},{...ai,hints}).count,0,'higher confidence threshold must reflect the whole stroke, not its best pixel');
   edit.strokes=[{tool:'protect',radius:.04,points:[{x:72/160,y:78/140}]}];assert.equal(composeMask(img,edit,{...ai,hints}).mask[78*160+72],0);
 });
 

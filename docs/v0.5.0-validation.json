@@ -1,0 +1,282 @@
+{
+  "version": "0.5.0",
+  "date": "2026-11-02",
+  "kind": "synthetic_development_regression_not_real_exam_accuracy",
+  "coreTests": 27,
+  "pagesPath": "/exam-cleaner/",
+  "browser": {
+    "success": true,
+    "checks": [
+      "EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit",
+      "works without cross-origin isolation headers as on GitHub Pages",
+      "home responsive 320",
+      "home responsive 390",
+      "home responsive 768",
+      "home responsive 1440",
+      "demo imports",
+      "fixed synthetic fixture imports for cross-platform image regression",
+      "actual ONNX WASM inference and OpenCV inpainting",
+      "coarse black mode switches locally and recommends texture repair",
+      "default AI preview preserves dark printed text on the demonstration",
+      "editor responsive 320",
+      "editor responsive 390",
+      "editor responsive 768",
+      "editor responsive 1440",
+      "semi-auto color, manual protect, undo and redo",
+      "IndexedDB save",
+      "actual inpainting preserves all manual keep pixels and all pixels outside final mask",
+      "manual correction responds and Restore question recovers accidentally erased printed text exactly",
+      "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
+      "two-finger touch zoom",
+      "explicit export confirmation and JPG",
+      "JPEG contains the sampled text repair with expected compression tolerance",
+      "valid PDF output",
+      "original bytes remain identical after all editing and exports",
+      "restore saved session including sampled text repair",
+      "model, WASM, image worker and service worker stay within Pages project path",
+      "offline reload and fresh AI inference with cached model and WASM",
+      "AI download failure clearly reported with working manual fallback",
+      "no page errors, HTTP failures, or photo upload requests"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": [],
+    "originalHash": "652c39695ce1ba10a074ea8bbc60658cc01b7dedbfee1176f15a9cdd867887c0"
+  },
+  "migration": {
+    "success": true,
+    "version": "0.5.0",
+    "date": "2026-11-02",
+    "kind": "synthetic_draft_migration",
+    "checks": [
+      "v1 and v2 hints rebuilt to v3 from stored model output",
+      "original bytes preserved",
+      "past, present, future, manual protection and sampled text snapshots preserved",
+      "new ink mode defaulted for all history entries",
+      "no page errors"
+    ]
+  },
+  "blackInk": [
+    {
+      "id": "black-flat",
+      "after": {
+        "ink": 2580,
+        "selected": 2580,
+        "coverage": 1,
+        "inkErrorRemoved": 1,
+        "printed": 9786,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "regions": [
+        {
+          "name": "black_without_underline",
+          "after": {
+            "ink": 955,
+            "selected": 955,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "gray_ink_without_underline",
+          "after": {
+            "ink": 944,
+            "selected": 944,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "isolated_black_digit",
+          "after": {
+            "ink": 341,
+            "selected": 341,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "mixed_density_stroke",
+          "after": {
+            "ink": 340,
+            "selected": 340,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "black-shadow",
+      "after": {
+        "ink": 2572,
+        "selected": 2572,
+        "coverage": 1,
+        "inkErrorRemoved": 0.9940588097958983,
+        "printed": 11082,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "regions": [
+        {
+          "name": "black_without_underline",
+          "after": {
+            "ink": 950,
+            "selected": 950,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9947910092722948,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "gray_ink_without_underline",
+          "after": {
+            "ink": 942,
+            "selected": 942,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9916919536185995,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "isolated_black_digit",
+          "after": {
+            "ink": 341,
+            "selected": 341,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9949224387897071,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "mixed_density_stroke",
+          "after": {
+            "ink": 339,
+            "selected": 339,
+            "coverage": 1,
+            "inkErrorRemoved": 0.9955913276774708,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "black-large",
+      "after": {
+        "ink": 5201,
+        "selected": 5201,
+        "coverage": 1,
+        "inkErrorRemoved": 1,
+        "printed": 20476,
+        "changedPrint": 0,
+        "changedOutside": 0
+      },
+      "regions": [
+        {
+          "name": "black_without_underline",
+          "after": {
+            "ink": 1934,
+            "selected": 1934,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "gray_ink_without_underline",
+          "after": {
+            "ink": 1922,
+            "selected": 1922,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "isolated_black_digit",
+          "after": {
+            "ink": 670,
+            "selected": 670,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        },
+        {
+          "name": "mixed_density_stroke",
+          "after": {
+            "ink": 675,
+            "selected": 675,
+            "coverage": 1,
+            "inkErrorRemoved": 1,
+            "printed": 0,
+            "changedPrint": 0,
+            "changedOutside": 0
+          }
+        }
+      ]
+    }
+  ],
+  "colorAndPencil": [
+    {
+      "id": "flat",
+      "after": {
+        "inkPixels": 3607,
+        "selectedInk": 3595,
+        "coverage": 0.9966731355697256,
+        "inkErrorRemoved": 0.9986702455989362,
+        "printPixels": 23016,
+        "changedPrint": 0,
+        "pixelsChangedOutsideMask": 0
+      }
+    },
+    {
+      "id": "shadow",
+      "after": {
+        "inkPixels": 3607,
+        "selectedInk": 3607,
+        "coverage": 1,
+        "inkErrorRemoved": 0.9999042975903237,
+        "printPixels": 23016,
+        "changedPrint": 0,
+        "pixelsChangedOutsideMask": 0
+      }
+    }
+  ],
+  "lineRepair": {
+    "restoredCrossingPixels": 8,
+    "incorrectLinePixels": 0
+  },
+  "limits": [
+    "AI model weights unchanged; no claimed real-exam accuracy",
+    "Overlapping print and handwriting, faint pencil and mobile hardware require user review",
+    "User photos and results remain in ignored local test-results only"
+  ]
+}

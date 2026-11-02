@@ -13,6 +13,22 @@ page.on('pageerror', e => errors.push(e.message)); page.on('request', r => { if 
 page.on('console', msg => { if (msg.type() === 'error') console.log('BROWSER:', msg.text().slice(0, 300)); });
 try {
   await page.goto(appUrl, { waitUntil: 'networkidle' });
+  for(const [width,height,outWidth,outHeight] of [[180,260,260,180],[2100,2800,2000,1500]]) {
+    const importPage=await context.newPage();importPage.on('pageerror',e=>errors.push(e.message));await importPage.goto(appUrl);
+    const bytes=await importPage.evaluate(async({width,height})=>{
+      const c=document.createElement('canvas');c.width=width;c.height=height;const x=c.getContext('2d');
+      x.fillStyle='white';x.fillRect(0,0,width,height);x.fillStyle='red';x.fillRect(0,0,width/4,height/4);
+      const jpeg=new Uint8Array(await(await new Promise(r=>c.toBlob(r,'image/jpeg'))).arrayBuffer());
+      const exif=new Uint8Array([255,225,0,34,69,120,105,102,0,0,73,73,42,0,8,0,0,0,1,0,18,1,3,0,1,0,0,0,6,0,0,0,0,0,0,0]);
+      return [...jpeg.slice(0,2),...exif,...jpeg.slice(2)];
+    },{width,height});
+    await importPage.locator('input[type=file]').first().setInputFiles({name:'rotated-fixture.jpg',mimeType:'image/jpeg',buffer:Buffer.from(bytes)});
+    await importPage.locator('.canvas-footer').getByText(`${outWidth} × ${outHeight} px`,{exact:false}).waitFor();
+    const decoded=await importPage.evaluate(()=>{const c=document.querySelector('.paper-stage canvas');return {width:c.width,height:c.height,pixel:[...c.getContext('2d').getImageData(Math.floor(c.width*.9),Math.floor(c.height*.1),1,1).data]};});
+    assert.equal(decoded.width,outWidth);assert.equal(decoded.height,outHeight);assert.ok(decoded.pixel[0]>230&&decoded.pixel[1]<25&&decoded.pixel[2]<25,'EXIF rotation must place the red corner at top right');
+    await importPage.close();
+  }
+  checks.push('EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit');
   if (process.env.PAGES_QA === '1') { assert.equal(await page.evaluate(() => crossOriginIsolated), false); checks.push('works without cross-origin isolation headers as on GitHub Pages'); }
   await page.screenshot({ path: `${dir}/home-desktop.png`, fullPage: true });
   for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 1000 }); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `home overflow ${width}`); checks.push(`home responsive ${width}`); }
