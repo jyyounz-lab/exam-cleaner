@@ -105,7 +105,9 @@ GitHub Pages 部署設定保存在 `.github/workflows/pages.yml`；`.openai/host
 - 黑灰筆畫的候選分數參考整段平均，調高門檻時可排除證據不足的筆畫；既有黑筆與彩筆品質回歸維持通過。
 - 修正帶 EXIF 旋轉資訊的小型照片匯入時被不必要縮小的情況，保留原始細節；工作圖長邊仍限制為 2000 px，原始檔案獨立保留。
 - 已存進度的舊版提示會使用既存模型結果重建，保留原圖、編輯歷史與同字修補快照。部署流程增加 v1／v2 提示升級測試。
+- 修正匯出視窗重新開啟後，延遲的重設動作可能取消剛勾選確認框的問題。
 - 模型權重保持一致；這次調整改善選取與保護策略。新增合成測試涵蓋直排字、括號、端點、保護邊界和 EXIF，沒有以單張實圖推估通用辨識率。
+- 本機 Pages 模式已通過 27 項核心測試、31 項瀏覽器檢查、兩代舊提示升級，以及三組黑筆、兩組彩筆／鉛筆與交叉線修補回歸。報告見 `docs/v0.5.0-validation.json`。
 
 - [公開網站](https://jyyounz-lab.github.io/exam-cleaner/) · [GitHub 儲存庫](https://github.com/jyyounz-lab/exam-cleaner) · [自動部署紀錄](https://github.com/jyyounz-lab/exam-cleaner/actions/workflows/pages.yml)。
 - 2026-10-30 已完成 GitHub Linux CI 與正式網址各 29 項瀏覽器檢查，核心測試 22 項通過；線上模型雜湊與本機相同。報告見 `docs/pages-ci-validation.json` 與 `docs/pages-live-validation.json`。

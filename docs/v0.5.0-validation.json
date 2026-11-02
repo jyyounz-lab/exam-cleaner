@@ -28,6 +28,7 @@
       "manual correction responds and Restore question recovers accidentally erased printed text exactly",
       "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
       "two-finger touch zoom",
+      "reopened export resets confirmation once and preserves immediate user confirmation",
       "explicit export confirmation and JPG",
       "JPEG contains the sampled text repair with expected compression tolerance",
       "valid PDF output",

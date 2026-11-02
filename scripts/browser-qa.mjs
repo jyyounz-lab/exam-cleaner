@@ -92,6 +92,17 @@ try {
   const touchBox = await canvas.boundingBox(), cx = touchBox.x + Math.min(touchBox.width / 2, 260), cy = touchBox.y + 170;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{x:cx-35,y:cy,id:1},{x:cx+35,y:cy,id:2}] }); await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{x:cx-70,y:cy,id:1},{x:cx+70,y:cy,id:2}] }); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForFunction(() => document.querySelector('.zoom-label').textContent !== '100%'); checks.push('two-finger touch zoom'); await page.getByRole('button', { name: '縮放重設為100%' }).click(); await cdp.detach();
+  // Confirmation resets before opening; a delayed render must not clear a user's new check.
+  for(let attempt=0;attempt<3;attempt++) {
+    await page.getByRole('button',{name:'確認匯出',exact:true}).click();
+    assert.equal(await page.getByLabel('我已檢查題目與清除範圍').isChecked(),false);
+    await page.getByLabel('我已檢查題目與清除範圍').check();
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert.equal(await page.getByLabel('我已檢查題目與清除範圍').isChecked(),true);
+    assert.equal(await page.getByRole('button',{name:'下載 A4 PDF',exact:true}).isDisabled(),false);
+    await page.getByRole('button',{name:'關閉視窗',exact:true}).click();
+  }
+  checks.push('reopened export resets confirmation once and preserves immediate user confirmation');
   await page.getByRole('button', { name: '確認匯出', exact: true }).click(); assert.ok(await page.getByRole('button', { name: '下載 JPG', exact: true }).isDisabled());
   await page.getByLabel('我已檢查題目與清除範圍').check(); const [jpgDownload] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '下載 JPG', exact: true }).click()]); await jpgDownload.saveAs(`${dir}/cleaned.jpg`); checks.push('explicit export confirmation and JPG');
   const jpgPixels=await readFile(`${dir}/cleaned.jpg`);
