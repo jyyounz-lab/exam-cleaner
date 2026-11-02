@@ -279,5 +279,33 @@
     "AI model weights unchanged; no claimed real-exam accuracy",
     "Overlapping print and handwriting, faint pencil and mobile hardware require user review",
     "User photos and results remain in ignored local test-results only"
-  ]
+  ],
+  "deployment": {
+    "commit": "a158eab246175ad5e9a36e18963fde97e541e83a",
+    "run": "https://github.com/jyyounz-lab/exam-cleaner/actions/runs/41377019976",
+    "build": "success",
+    "deploy": "success",
+    "ciBrowserChecks": 31,
+    "ciMigrationVersions": [
+      1,
+      2
+    ]
+  },
+  "live": {
+    "date": "2026-11-02",
+    "version": "0.5.0",
+    "url": "https://jyyounz-lab.github.io/exam-cleaner/",
+    "success": true,
+    "modelHash": "42c370c5517d897362981e026a940b6e26ed3121bf1cfe70e868d8eac62e0022",
+    "ai": "AI 清除與修復完成\n35 區塊 · 推論 26.4 秒",
+    "checks": [
+      "published footer v0.5.0",
+      "unchanged model hash",
+      "actual ONNX inference and repair on public site",
+      "export ready",
+      "no page errors or photo uploads"
+    ],
+    "errors": [],
+    "sent": []
+  }
 }
