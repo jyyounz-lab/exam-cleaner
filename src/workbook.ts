@@ -1,12 +1,14 @@
 import { inkFeatures, inkFeatureNames } from './inkFeatures.ts';
 type Pixels = {width:number;height:number;data:Uint8ClampedArray};
-export type WorkbookHints = {version:1;confidence:Uint8Array;keep:Uint8Array;lines:Uint8Array;crossings:Uint8Array};
+export const WORKBOOK_MODEL_REVISION = 2;
+export type WorkbookHints = {version:1;modelRevision?:number;confidence:Uint8Array;keep:Uint8Array;lines:Uint8Array;crossings:Uint8Array};
 type TreeNode = [number,number,number,number,number];
-export type WorkbookModel = {version:1;featureNames:string[];bias:number;trees:TreeNode[][]};
+export type WorkbookModel = {version:1;revision?:number;featureNames:string[];bias:number;trees:TreeNode[][]};
 
 export function validateWorkbookModel(value:unknown):WorkbookModel {
   const m=value as WorkbookModel;
   if(!m||m.version!==1||JSON.stringify(m.featureNames)!==JSON.stringify(inkFeatureNames)||!Number.isFinite(m.bias)||!Array.isArray(m.trees)||!m.trees.length||m.trees.length>200)throw new Error('課本補強模型格式不符，請重新下載。');
+  if(m.revision!==undefined&&(!Number.isInteger(m.revision)||m.revision<1))throw new Error('課本補強模型版本不符。');
   for(const tree of m.trees){
     if(!Array.isArray(tree)||!tree.length||tree.length>1024)throw new Error('課本補強模型樹狀資料不符。');
     for(let i=0;i<tree.length;i++){
@@ -67,6 +69,8 @@ export function analyseWorkbook(image:Pixels, prediction:{handwriting:Float32Arr
     if(f[2]<5||c.end-c.start<12)continue;
     // Dense line drawings (nets, grids) require contextual recognition beyond this small classifier.
     if(f[1]>70&&f[2]>70&&f[3]>.1)continue;
+    // shortcut: protect broad colour regions distinct from their background; overlapping marker strokes still need review.
+    if(f[1]>55&&f[2]>55&&f[3]>.14&&f[17]>.25&&f[9]>20&&f[9]>f[20]*1.4)continue;
     let left=0,right=0;
     for(const other of printed){
       if(other===c)continue;const height=c.box[3]-c.box[1],oh=other.box[3]-other.box[1];
@@ -91,5 +95,5 @@ export function analyseWorkbook(image:Pixels, prediction:{handwriting:Float32Arr
   for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)if(centers[y*w+x])for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
     const j=(y+dy)*w+x+dx;if(contrast[j]>2&&confidence[j]<128)keep[j]=1;
   }
-  return {version:1,confidence,keep,lines,crossings};
+  return {version:1,modelRevision:model.revision??1,confidence,keep,lines,crossings};
 }

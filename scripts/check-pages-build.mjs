@@ -38,7 +38,8 @@ for (const file of stored) {
   assert.ok((await stat(`dist/${file.slice(base.length)}`)).isFile());
 }
 assert.ok(stored.includes(`${base}models/phti-fcnn.onnx`));
-assert.ok(stored.includes(`${base}models/workbook-ink.json`));
+assert.ok(stored.includes(`${base}models/${workbookMetadata.file}`));
+assert.equal(workbookMetadata.file,'workbook-ink-v2.json');
 assert.ok(stored.includes(`${base}cv.worker.v4.js`));
 assert.ok(stored.includes(`${base}vendor/opencv.js`));
 assert.ok(stored.some(file => file.endsWith('.wasm')));

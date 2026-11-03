@@ -3,7 +3,7 @@ import wasmModuleUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-th
 import wasmBinaryUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
 import { sauvola } from './core';
 import { refineInk } from './refine';
-import { analyseWorkbook, validateWorkbookModel } from './workbook';
+import { analyseWorkbook, validateWorkbookModel, WORKBOOK_MODEL_REVISION } from './workbook';
 ort.env.wasm.wasmPaths = { mjs: wasmModuleUrl, wasm: wasmBinaryUrl };
 ort.env.wasm.numThreads = 1;
 let session: ort.InferenceSession | undefined;
@@ -44,9 +44,11 @@ self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
     progress(97, '正在補齊筆畫、辨識答案區與保護底線…');
     const hints = refineInk(image, { handwriting, print }, binary);
     progress(99, '正在辨識淡鉛筆與課本印刷內容…');
-    const response=await fetch(`${import.meta.env.BASE_URL}models/workbook-ink.json`);
+    const response=await fetch(`${import.meta.env.BASE_URL}models/workbook-ink-v2.json`);
     if(!response.ok)throw new Error('課本補強模型尚未下載完成，請連線後重試。');
-    const workbook=analyseWorkbook(image,{handwriting,print},binary,validateWorkbookModel(await response.json()));
+    const model=validateWorkbookModel(await response.json());
+    if(model.revision!==WORKBOOK_MODEL_REVISION)throw new Error('課本模型版本尚未更新，請重新連線下載。');
+    const workbook=analyseWorkbook(image,{handwriting,print},binary,model);
     self.postMessage({ type: 'result', handwriting, print, hints, workbook, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.handInk.buffer, hints.boldInk.buffer, hints.printInk.buffer, hints.picture.buffer, hints.structure.buffer, hints.lineRepair.buffer,workbook.confidence.buffer,workbook.keep.buffer,workbook.lines.buffer,workbook.crossings.buffer]);
   } catch (error) { self.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };

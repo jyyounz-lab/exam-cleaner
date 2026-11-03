@@ -11,10 +11,11 @@ const image=(w=800,h=800)=>({width:w,height:h,data:new Uint8ClampedArray(w*h*4).
 const prediction=(n:number)=>({handwriting:new Float32Array(n),print:new Float32Array(n)});
 
 test('訓練模型格式與節點驗證，拒絕循環和非有限值',()=>{
-  const model=validateWorkbookModel(JSON.parse(fs.readFileSync('public/models/workbook-ink.json','utf8')));
-  assert.equal(model.trees.length,80);assert.equal(workbookScore(new Array(inkFeatureNames.length).fill(0),model)>0,true);
+  const model=validateWorkbookModel(JSON.parse(fs.readFileSync('public/models/workbook-ink-v2.json','utf8')));
+  assert.equal(model.trees.length,120);assert.equal(model.revision,2);assert.equal(workbookScore(new Array(inkFeatureNames.length).fill(0),model)>0,true);
   assert.throws(()=>validateWorkbookModel({...certain,trees:[[[0,0,0,0,0]]]}));
   assert.throws(()=>validateWorkbookModel({...certain,bias:NaN}));
+  assert.throws(()=>validateWorkbookModel({...certain,revision:0}));
   assert.throws(()=>validateWorkbookModel({...certain,featureNames:[]}));
 });
 
@@ -47,6 +48,17 @@ test('課本遮罩門檻連續生效，人工保留、還原與限定區域優�
   assert.equal(composeMask(img,{...edit,region:{x:0,y:0,w:.2,h:.2}},{...raw,workbook}).mask[210],0);
   assert.equal(composeMask(img,edit,raw).count,0,'legacy draft needs new analysis, never silently use the old model');
   assert.throws(()=>composeMask(img,edit,{...raw,workbook:{...workbook,confidence:new Uint8Array(1)}}));
+});
+
+test('課本模式保留縮圖後分離的寬厚彩色插圖片段',()=>{
+  const img=image(),w=img.width,raw=prediction(w*img.height);
+  for(let y=200;y<245;y++)for(let x=190;x<275;x++)if(Math.abs(x-205-(y-200)*1.2)<7)img.data.set([90,115,155,255],(y*w+x)*4);
+  const workbook=analyseWorkbook(img,raw,sauvola(img),certain);
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'workbook',threshold:.5},{...raw,workbook}).count,0);
+  for(let y=175;y<275;y++)for(let x=175;x<300;x++)img.data.set([240,230,190,255],(y*w+x)*4);
+  for(let y=200;y<245;y++)for(let x=190;x<275;x++)if(Math.abs(x-205-(y-200)*1.2)<7)img.data.set([120,110,90,255],(y*w+x)*4);
+  const pencil=analyseWorkbook(img,raw,sauvola(img),certain);
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'workbook',threshold:.5},{...raw,workbook:pencil}).mask[220*w+229],255,'handwriting over a coloured background must remain selectable');
 });
 
 test('彩色導線交叉處由兩側實際線色修補，範圍外與單側證據保持原樣',()=>{

@@ -46,11 +46,28 @@ try {
       await page.locator('#ink-type').selectOption('workbook');
       await page.getByText('AI 清除與修復完成',{exact:true}).waitFor({timeout:180000});
       await page.getByRole('button',{name:'儲存進度',exact:true}).click();await page.getByText(/編輯進度已儲存在此瀏覽器/).waitFor();
-      const upgraded=await page.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await d.original.arrayBuffer()))).map(v=>v.toString(16).padStart(2,'0')).join('');return{digest,mode:d.history.present.inkType,strokes:d.history.present.strokes,version:d.ai.workbook?.version,length:d.ai.workbook?.confidence.length};});
-      assert.equal(upgraded.digest,before.digest);assert.equal(upgraded.mode,'workbook');assert.equal(upgraded.version,1);assert.equal(upgraded.length,126000);assert.deepEqual(upgraded.strokes,before.history.present.strokes);
+      const upgraded=await page.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await d.original.arrayBuffer()))).map(v=>v.toString(16).padStart(2,'0')).join('');return{digest,mode:d.history.present.inkType,strokes:d.history.present.strokes,version:d.ai.workbook?.version,modelRevision:d.ai.workbook?.modelRevision,length:d.ai.workbook?.confidence.length};});
+      assert.equal(upgraded.digest,before.digest);assert.equal(upgraded.mode,'workbook');assert.equal(upgraded.version,1);assert.equal(upgraded.modelRevision,2);assert.equal(upgraded.length,126000);assert.deepEqual(upgraded.strokes,before.history.present.strokes);
       console.log('PASS: v0.5 draft switches to trained workbook model by reanalysis, original and manual edits preserved');
+      await page.evaluate(async()=>{
+        const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+        const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+        delete d.ai.workbook.modelRevision;d.ai.workbook.confidence.fill(255);
+        await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put(d,'current');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);});db.close();
+      });
+      await page.reload();await page.getByRole('button',{name:/繼續編輯/}).click();
+      await page.getByText('AI 清除與修復完成',{exact:true}).waitFor({timeout:180000});
+      await page.getByRole('button',{name:'儲存進度',exact:true}).click();await page.getByText(/編輯進度已儲存在此瀏覽器/).waitFor();
+      const refreshed=await page.evaluate(async()=>{
+        const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+        const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();
+        const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await d.original.arrayBuffer()))).map(v=>v.toString(16).padStart(2,'0')).join('');
+        return {revision:d.ai.workbook.modelRevision,digest,strokes:d.history.present.strokes,threshold:d.history.present.threshold,allSelected:d.ai.workbook.confidence.every(v=>v===255)};
+      });
+      assert.equal(refreshed.revision,2);assert.equal(refreshed.digest,before.digest);assert.deepEqual(refreshed.strokes,before.history.present.strokes);assert.equal(refreshed.threshold,.9);assert.equal(refreshed.allSelected,false);
+      console.log('PASS: v0.6.0 workbook draft recomputes new model hints without losing original, settings or manual edits');
     }
   }
-  const report = { success: true, version: JSON.parse(await readFile('package.json','utf8')).version, date: '2026-11-03', kind: 'synthetic_draft_migration', checks: ['v1 and v2 hints rebuilt to v3; existing v3 retained', 'original bytes preserved', 'past, present, future, manual protection and sampled text snapshots preserved', 'new ink mode defaulted for all history entries', 'v0.5 draft can reanalyse with workbook model while keeping original and manual edits', 'no page errors'] };
+  const report = { success: true, version: JSON.parse(await readFile('package.json','utf8')).version, date: '2026-11-03', kind: 'synthetic_draft_migration', checks: ['v1 and v2 hints rebuilt to v3; existing v3 retained', 'original bytes preserved', 'past, present, future, manual protection and sampled text snapshots preserved', 'new ink mode defaulted for all history entries', 'v0.5 draft can reanalyse with workbook model while keeping original and manual edits', 'v0.6.0 workbook hints automatically refresh with model revision 2; original, settings and manual edits preserved', 'no page errors'] };
   await mkdir('test-results', { recursive: true }); await writeFile('test-results/migration-qa.json', JSON.stringify(report, null, 2)); console.log(JSON.stringify(report, null, 2));
 } finally { await browser.close(); }

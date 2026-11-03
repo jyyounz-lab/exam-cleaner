@@ -1,36 +1,68 @@
 {
-  "id": "workbook-ink-1",
+  "id": "workbook-ink-2",
   "name": "彩色課本淡鉛筆補強模型（實驗）",
-  "version": "2026-11-02-1",
-  "file": "workbook-ink.json",
-  "sha256": "2d339a53f47b75136ee0ceb3a409c8b5a898aba2757402742f7bf9c25c9cee5e",
-  "bytes": 50404,
-  "architecture": "80 depth-3 gradient boosted decision trees over connected ink components",
+  "version": "2026-11-03-2",
+  "revision": 2,
+  "file": "workbook-ink-v2.json",
+  "sha256": "a260bc3cc2d981be86e345acc052bfe07e6733e400a02780c5b5bff4b62d09da",
+  "bytes": 77680,
+  "architecture": "120 depth-3 gradient boosted decision trees over connected ink components",
   "features": 27,
   "training": {
     "pages": {
       "train": [
-        "page09",
-        "page10",
-        "page13",
-        "page15",
-        "page18",
-        "page21",
-        "page22"
+        "page09-w1108",
+        "page09-w1500",
+        "page09-w900",
+        "page10-w1108",
+        "page10-w1500",
+        "page10-w900",
+        "page13-w1108",
+        "page13-w1500",
+        "page13-w900",
+        "page15-w1108",
+        "page15-w1500",
+        "page15-w900",
+        "page18-w1108",
+        "page18-w1500",
+        "page18-w900",
+        "page21-w1108",
+        "page21-w1500",
+        "page21-w900",
+        "page22-w1108",
+        "page22-w1500",
+        "page22-w900"
       ],
       "validation": [
-        "page17"
+        "page17-w1108",
+        "page17-w1500",
+        "page17-w900"
       ],
       "test": [
-        "page25",
-        "page27"
+        "page25-w1108",
+        "page25-w1500",
+        "page25-w900",
+        "page27-w1108",
+        "page27-w1500",
+        "page27-w900"
       ]
     },
-    "labeledComponents": 2379,
-    "positiveComponents": 107,
+    "labeledComponents": 7096,
+    "positiveComponents": 320,
     "source": "ten local third-party comparison pairs; sparse reviewed weak labels",
     "seed": 20261102,
-    "featureDataSha256": "9537a2cd19f513804d16f112465937af85ef687c8b3e2366a61bea438e508762"
+    "featureDataSha256": "b8d2f1014152ec6b8539310a8bddfbb71642dd13bf43fed88c0bdd65d9df530b",
+    "augmentation": {
+      "widths": [
+        900,
+        1108,
+        1500
+      ],
+      "sourcePages": 7,
+      "trainingVariants": 21,
+      "confirmedPrintWeight": 12,
+      "splitUnit": "source page, variants never cross splits"
+    }
   },
   "recommendedThreshold": 0.9,
   "runsLocally": true,
@@ -39,7 +71,8 @@
     "Small English workbook dataset; not a general Chinese/Zhuyin model",
     "Comparison outputs contain defects and are not clean ground truth",
     "Cannot infer hidden original printed pixels",
-    "Final safety guards were adjusted after reviewing evaluation-page errors; final pipeline numbers are development measurements, not a blind benchmark",
-    "Repair uses local inpainting and observed guide pixels; no trained image-generation repair model"
+    "Development regression only; reference pages already reviewed in earlier versions",
+    "Confirmed printed examples are keep labels; overlapping strokes may remain",
+    "Repair uses local inpainting and observed guide pixels; no trained image generation"
   ]
 }

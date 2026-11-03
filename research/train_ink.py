@@ -27,10 +27,12 @@ def main():
     assert not (set(pages['train']) & (set(pages['test']) | set(pages['validation'])))
     # Weight classes, while preventing a single large component from dominating.
     weights = np.array([np.sqrt(min(r['size'], 300)) for r in train])
+    # Explicitly confirmed printed exemplars carry more evidence than weak pair labels.
+    weights *= np.array([12 if r.get('confirmedKeep', 0) >= 5 and r['label'] == 0 else 1 for r in train])
     for cls in [0, 1]:
         weights[y == cls] /= weights[y == cls].sum()
     weights *= len(weights) / 2
-    model = GradientBoostingClassifier(n_estimators=80, learning_rate=.08, max_depth=3, min_samples_leaf=5, random_state=20261102)
+    model = GradientBoostingClassifier(n_estimators=120, learning_rate=.08, max_depth=3, min_samples_leaf=5, random_state=20261102)
     model.fit(x, y, sample_weight=weights)
     trees = []
     for estimator in model.estimators_[:, 0]:

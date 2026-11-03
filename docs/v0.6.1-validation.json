@@ -1,0 +1,600 @@
+{
+  "date": "2026-11-03",
+  "version": "0.6.1",
+  "status": "local-validation-passed-deployment-pending",
+  "model": {
+    "id": "workbook-ink-2",
+    "name": "彩色課本淡鉛筆補強模型（實驗）",
+    "version": "2026-11-03-2",
+    "revision": 2,
+    "file": "workbook-ink-v2.json",
+    "sha256": "a260bc3cc2d981be86e345acc052bfe07e6733e400a02780c5b5bff4b62d09da",
+    "bytes": 77680,
+    "architecture": "120 depth-3 gradient boosted decision trees over connected ink components",
+    "features": 27,
+    "training": {
+      "pages": {
+        "train": [
+          "page09-w1108",
+          "page09-w1500",
+          "page09-w900",
+          "page10-w1108",
+          "page10-w1500",
+          "page10-w900",
+          "page13-w1108",
+          "page13-w1500",
+          "page13-w900",
+          "page15-w1108",
+          "page15-w1500",
+          "page15-w900",
+          "page18-w1108",
+          "page18-w1500",
+          "page18-w900",
+          "page21-w1108",
+          "page21-w1500",
+          "page21-w900",
+          "page22-w1108",
+          "page22-w1500",
+          "page22-w900"
+        ],
+        "validation": [
+          "page17-w1108",
+          "page17-w1500",
+          "page17-w900"
+        ],
+        "test": [
+          "page25-w1108",
+          "page25-w1500",
+          "page25-w900",
+          "page27-w1108",
+          "page27-w1500",
+          "page27-w900"
+        ]
+      },
+      "labeledComponents": 7096,
+      "positiveComponents": 320,
+      "source": "ten local third-party comparison pairs; sparse reviewed weak labels",
+      "seed": 20261102,
+      "featureDataSha256": "b8d2f1014152ec6b8539310a8bddfbb71642dd13bf43fed88c0bdd65d9df530b",
+      "augmentation": {
+        "widths": [
+          900,
+          1108,
+          1500
+        ],
+        "sourcePages": 7,
+        "trainingVariants": 21,
+        "confirmedPrintWeight": 12,
+        "splitUnit": "source page, variants never cross splits"
+      }
+    },
+    "recommendedThreshold": 0.9,
+    "runsLocally": true,
+    "containsImages": false,
+    "limitations": [
+      "Small English workbook dataset; not a general Chinese/Zhuyin model",
+      "Comparison outputs contain defects and are not clean ground truth",
+      "Cannot infer hidden original printed pixels",
+      "Development regression only; reference pages already reviewed in earlier versions",
+      "Confirmed printed examples are keep labels; overlapping strokes may remain",
+      "Repair uses local inpainting and observed guide pixels; no trained image generation"
+    ]
+  },
+  "originalOnnx": "unchanged",
+  "scope": "Multi-resolution auxiliary classifier retraining, confirmed printed exemplar preservation, contextual filled-colour illustration protection, and stale model-hint migration.",
+  "dataset": {
+    "sourcePairs": 10,
+    "sourceSplit": {
+      "train": 7,
+      "validation": 1,
+      "previouslyReviewedDevelopmentEvaluation": 2
+    },
+    "trainingVariants": 21,
+    "widths": [
+      900,
+      1108,
+      1500
+    ],
+    "labeledTrainingComponents": 7096,
+    "positiveTrainingComponents": 320,
+    "confirmedPrintPixelsAtNativeSize": 22300,
+    "confirmedPrintWeight": 12,
+    "labels": "Sparse weak labels from other-tool outputs plus manually reviewed preservation masks; not clean original ground truth."
+  },
+  "checks": {
+    "coreTests": {
+      "passed": 33,
+      "failed": 0
+    },
+    "browserFunctional": {
+      "passed": 32,
+      "checks": [
+        "EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit",
+        "works without cross-origin isolation headers as on GitHub Pages",
+        "home responsive 320",
+        "home responsive 390",
+        "home responsive 768",
+        "home responsive 1440",
+        "demo imports",
+        "fixed synthetic fixture imports for cross-platform image regression",
+        "actual ONNX WASM inference and OpenCV inpainting",
+        "trained workbook mode, 90% threshold, texture repair and pixel-exact saved-session restoration",
+        "coarse black mode switches locally and recommends texture repair",
+        "default AI preview preserves dark printed text on the demonstration",
+        "editor responsive 320",
+        "editor responsive 390",
+        "editor responsive 768",
+        "editor responsive 1440",
+        "semi-auto color, manual protect, undo and redo",
+        "IndexedDB save",
+        "actual inpainting preserves all manual keep pixels and all pixels outside final mask",
+        "manual correction responds and Restore question recovers accidentally erased printed text exactly",
+        "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
+        "two-finger touch zoom",
+        "reopened export resets confirmation once and preserves immediate user confirmation",
+        "explicit export confirmation and JPG",
+        "JPEG contains the sampled text repair with expected compression tolerance",
+        "valid PDF output",
+        "original bytes remain identical after all editing and exports",
+        "restore saved session including sampled text repair",
+        "model, WASM, image worker and service worker stay within Pages project path",
+        "offline reload and fresh AI inference with cached model and WASM",
+        "AI download failure clearly reported with working manual fallback",
+        "no page errors, HTTP failures, or photo upload requests"
+      ]
+    },
+    "migration": {
+      "success": true,
+      "version": "0.6.1",
+      "date": "2026-11-03",
+      "kind": "synthetic_draft_migration",
+      "checks": [
+        "v1 and v2 hints rebuilt to v3; existing v3 retained",
+        "original bytes preserved",
+        "past, present, future, manual protection and sampled text snapshots preserved",
+        "new ink mode defaulted for all history entries",
+        "v0.5 draft can reanalyse with workbook model while keeping original and manual edits",
+        "v0.6.0 workbook hints automatically refresh with model revision 2; original, settings and manual edits preserved",
+        "no page errors"
+      ]
+    },
+    "build": "passed locally; exact final source rechecked by deployment CI"
+  },
+  "offline": {
+    "comparison": "Both model versions evaluated with current protection rules, not a full replay of the previous app.",
+    "variants": 30,
+    "threshold": 0.9,
+    "byWidth": [
+      {
+        "width": 900,
+        "variants": 10,
+        "before": {
+          "hand": 21846,
+          "selected": 17828,
+          "keep": 513737,
+          "damaged": 6203,
+          "confirmed": 14751,
+          "confirmedDamaged": 1876
+        },
+        "after": {
+          "hand": 21846,
+          "selected": 19039,
+          "keep": 513737,
+          "damaged": 664,
+          "confirmed": 14751,
+          "confirmedDamaged": 0
+        }
+      },
+      {
+        "width": 1108,
+        "variants": 10,
+        "before": {
+          "hand": 32946,
+          "selected": 28600,
+          "keep": 778324,
+          "damaged": 2773,
+          "confirmed": 22300,
+          "confirmedDamaged": 2133
+        },
+        "after": {
+          "hand": 32946,
+          "selected": 28606,
+          "keep": 778324,
+          "damaged": 241,
+          "confirmed": 22300,
+          "confirmedDamaged": 0
+        }
+      },
+      {
+        "width": 1500,
+        "variants": 10,
+        "before": {
+          "hand": 60230,
+          "selected": 32282,
+          "keep": 1425939,
+          "damaged": 756,
+          "confirmed": 40620,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 60230,
+          "selected": 50099,
+          "keep": 1425939,
+          "damaged": 562,
+          "confirmed": 40620,
+          "confirmedDamaged": 0
+        }
+      }
+    ],
+    "confirmed": [
+      {
+        "id": "page21-w1108",
+        "thresholds": [
+          {
+            "threshold": 0.9,
+            "confirmed": 22300,
+            "damaged": 0
+          },
+          {
+            "threshold": 0.8,
+            "confirmed": 22300,
+            "damaged": 0
+          },
+          {
+            "threshold": 0.5,
+            "confirmed": 22300,
+            "damaged": 0
+          }
+        ]
+      },
+      {
+        "id": "page21-w900",
+        "thresholds": [
+          {
+            "threshold": 0.9,
+            "confirmed": 14751,
+            "damaged": 0
+          },
+          {
+            "threshold": 0.8,
+            "confirmed": 14751,
+            "damaged": 0
+          },
+          {
+            "threshold": 0.5,
+            "confirmed": 14751,
+            "damaged": 0
+          }
+        ]
+      },
+      {
+        "id": "page21-w1500",
+        "thresholds": [
+          {
+            "threshold": 0.9,
+            "confirmed": 40620,
+            "damaged": 0
+          },
+          {
+            "threshold": 0.8,
+            "confirmed": 40620,
+            "damaged": 0
+          },
+          {
+            "threshold": 0.5,
+            "confirmed": 40620,
+            "damaged": 0
+          }
+        ]
+      }
+    ]
+  },
+  "actualBrowser": {
+    "success": true,
+    "kind": "development-regression-on-sparse-labels-and-confirmed-exemplars-not-blind-accuracy",
+    "reports": [
+      {
+        "id": "page09-w1108",
+        "sourcePage": "page09",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 5987,
+          "selected": 5920,
+          "printed": 86135,
+          "damaged": 8,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 5987,
+          "selected": 5899,
+          "printed": 86135,
+          "damaged": 11,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page10-w1108",
+        "sourcePage": "page10",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 5561,
+          "selected": 3941,
+          "printed": 55117,
+          "damaged": 0,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 5561,
+          "selected": 3956,
+          "printed": 55117,
+          "damaged": 0,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page13-w1108",
+        "sourcePage": "page13",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 3810,
+          "selected": 3324,
+          "printed": 78438,
+          "damaged": 90,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 3810,
+          "selected": 3324,
+          "printed": 78438,
+          "damaged": 90,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page15-w1108",
+        "sourcePage": "page15",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 2230,
+          "selected": 1641,
+          "printed": 93427,
+          "damaged": 86,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 2230,
+          "selected": 1681,
+          "printed": 93427,
+          "damaged": 78,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page17-w1108",
+        "sourcePage": "page17",
+        "split": "validation",
+        "revision": 2,
+        "before": {
+          "hand": 4379,
+          "selected": 4175,
+          "printed": 80461,
+          "damaged": 18,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 4379,
+          "selected": 4060,
+          "printed": 80461,
+          "damaged": 21,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page18-w1108",
+        "sourcePage": "page18",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 3165,
+          "selected": 2748,
+          "printed": 50128,
+          "damaged": 0,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 3165,
+          "selected": 2918,
+          "printed": 50128,
+          "damaged": 0,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page21-w1108",
+        "sourcePage": "page21",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 1817,
+          "selected": 1751,
+          "printed": 75133,
+          "damaged": 2291,
+          "confirmed": 22300,
+          "confirmedDamaged": 2133
+        },
+        "after": {
+          "hand": 1817,
+          "selected": 1750,
+          "printed": 75133,
+          "damaged": 20,
+          "confirmed": 22300,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page21-w900",
+        "sourcePage": "page21",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 1181,
+          "selected": 1136,
+          "printed": 49631,
+          "damaged": 1956,
+          "confirmed": 14751,
+          "confirmedDamaged": 1876
+        },
+        "after": {
+          "hand": 1181,
+          "selected": 1137,
+          "printed": 49631,
+          "damaged": 12,
+          "confirmed": 14751,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page21-w1500",
+        "sourcePage": "page21",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 3313,
+          "selected": 1967,
+          "printed": 137321,
+          "damaged": 50,
+          "confirmed": 40620,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 3313,
+          "selected": 3117,
+          "printed": 137321,
+          "damaged": 41,
+          "confirmed": 40620,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page22-w1108",
+        "sourcePage": "page22",
+        "split": "train",
+        "revision": 2,
+        "before": {
+          "hand": 1263,
+          "selected": 657,
+          "printed": 98685,
+          "damaged": 241,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 1263,
+          "selected": 657,
+          "printed": 98685,
+          "damaged": 11,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page25-w1108",
+        "sourcePage": "page25",
+        "split": "test",
+        "revision": 2,
+        "before": {
+          "hand": 2237,
+          "selected": 2203,
+          "printed": 89396,
+          "damaged": 10,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 2237,
+          "selected": 2182,
+          "printed": 89396,
+          "damaged": 10,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      },
+      {
+        "id": "page27-w1108",
+        "sourcePage": "page27",
+        "split": "test",
+        "revision": 2,
+        "before": {
+          "hand": 2497,
+          "selected": 2240,
+          "printed": 71404,
+          "damaged": 29,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "after": {
+          "hand": 2497,
+          "selected": 2179,
+          "printed": 71404,
+          "damaged": 0,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        "outside": 0,
+        "pipelineHash": "3cee9c0ad88ceeab23c0eedf8d47c4506c53e7dd7952229e79e1243c7001ce6f"
+      }
+    ],
+    "errors": [],
+    "sent": []
+  },
+  "limits": [
+    "This is a development regression, not blind, full-page or general accuracy. Protection rules previously used development-evaluation pages.",
+    "Resolution variants are not independent new training pages.",
+    "Native-size handwriting coverage is broadly similar; individual pages have tradeoffs.",
+    "Thin connecting lines, circles, red marks and overlapping handwriting may remain.",
+    "No new generative letter-repair model, full semantic zoning or full-page residue pass was added.",
+    "Chinese/Zhuyin generalization, physical mobile devices and speed improvements remain unverified.",
+    "Private photos, labels, reference outputs and cleaned images remain local and excluded from Git and deployment."
+  ],
+  "deployment": {
+    "status": "pending"
+  }
+}
