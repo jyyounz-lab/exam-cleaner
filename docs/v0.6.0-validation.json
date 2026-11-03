@@ -358,6 +358,46 @@
     "Private photos, references, annotations and outputs remain local and excluded from Git"
   ],
   "deployment": {
-    "status": "pending"
+    "commit": "8915fd4b3914b0b2035843258bc0580e41305649",
+    "run": "https://github.com/jyyounz-lab/exam-cleaner/actions/runs/41558675054",
+    "build": "success",
+    "deploy": "success",
+    "ciCoreTests": 32,
+    "ciBrowserChecks": 32,
+    "ciMigrationVersions": [
+      1,
+      2,
+      3
+    ],
+    "v05WorkbookUpgrade": "passed"
+  },
+  "live": {
+    "date": "2026-11-03",
+    "version": "0.6.0",
+    "url": "https://jyyounz-lab.github.io/exam-cleaner/",
+    "success": true,
+    "hashes": {
+      "phti-fcnn.onnx": "42c370c5517d897362981e026a940b6e26ed3121bf1cfe70e868d8eac62e0022",
+      "workbook-ink.json": "2d339a53f47b75136ee0ceb3a409c8b5a898aba2757402742f7bf9c25c9cee5e"
+    },
+    "learned": {
+      "version": 1,
+      "pixels": 1992000,
+      "expected": 1992000,
+      "mode": "workbook"
+    },
+    "ai": "AI 清除與修復完成\n35 區塊 · 推論 29.6 秒",
+    "checks": [
+      "published footer v0.6.0",
+      "both deployed model hashes match local files",
+      "actual ONNX and trained classifier inference plus OpenCV repair",
+      "workbook mode retains 90% threshold through calibration",
+      "texture repair and export ready",
+      "trained model hints saved to IndexedDB",
+      "no page errors, HTTP failures or photo uploads"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": []
   }
 }
