@@ -1,0 +1,363 @@
+{
+  "version": "0.6.0",
+  "date": "2026-11-03",
+  "kind": "sparse_weak_label_development_regression_not_blind_or_general_accuracy",
+  "pagesPath": "/exam-cleaner/",
+  "model": {
+    "id": "workbook-ink-1",
+    "name": "彩色課本淡鉛筆補強模型（實驗）",
+    "version": "2026-11-02-1",
+    "file": "workbook-ink.json",
+    "sha256": "2d339a53f47b75136ee0ceb3a409c8b5a898aba2757402742f7bf9c25c9cee5e",
+    "bytes": 50404,
+    "architecture": "80 depth-3 gradient boosted decision trees over connected ink components",
+    "features": 27,
+    "training": {
+      "pages": {
+        "train": [
+          "page09",
+          "page10",
+          "page13",
+          "page15",
+          "page18",
+          "page21",
+          "page22"
+        ],
+        "validation": [
+          "page17"
+        ],
+        "test": [
+          "page25",
+          "page27"
+        ]
+      },
+      "labeledComponents": 2379,
+      "positiveComponents": 107,
+      "source": "ten local third-party comparison pairs; sparse reviewed weak labels",
+      "seed": 20261102,
+      "featureDataSha256": "9537a2cd19f513804d16f112465937af85ef687c8b3e2366a61bea438e508762"
+    },
+    "recommendedThreshold": 0.9,
+    "runsLocally": true,
+    "containsImages": false,
+    "limitations": [
+      "Small English workbook dataset; not a general Chinese/Zhuyin model",
+      "Comparison outputs contain defects and are not clean ground truth",
+      "Cannot infer hidden original printed pixels",
+      "Final safety guards were adjusted after reviewing evaluation-page errors; final pipeline numbers are development measurements, not a blind benchmark",
+      "Repair uses local inpainting and observed guide pixels; no trained image-generation repair model"
+    ]
+  },
+  "baseModel": {
+    "unchanged": true,
+    "sha256": "42c370c5517d897362981e026a940b6e26ed3121bf1cfe70e868d8eac62e0022"
+  },
+  "dataset": {
+    "pairs": 10,
+    "trainingPages": 7,
+    "validationPages": 1,
+    "evaluationPages": 2,
+    "target": "third-party cleanup, reviewed sparse weak labels",
+    "finalPipelineBlindTest": false,
+    "reason": "Safety guards adjusted after reviewing evaluation-page errors"
+  },
+  "coreTests": 32,
+  "browser": {
+    "success": true,
+    "checks": [
+      "EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit",
+      "works without cross-origin isolation headers as on GitHub Pages",
+      "home responsive 320",
+      "home responsive 390",
+      "home responsive 768",
+      "home responsive 1440",
+      "demo imports",
+      "fixed synthetic fixture imports for cross-platform image regression",
+      "actual ONNX WASM inference and OpenCV inpainting",
+      "trained workbook mode, 90% threshold, texture repair and pixel-exact saved-session restoration",
+      "coarse black mode switches locally and recommends texture repair",
+      "default AI preview preserves dark printed text on the demonstration",
+      "editor responsive 320",
+      "editor responsive 390",
+      "editor responsive 768",
+      "editor responsive 1440",
+      "semi-auto color, manual protect, undo and redo",
+      "IndexedDB save",
+      "actual inpainting preserves all manual keep pixels and all pixels outside final mask",
+      "manual correction responds and Restore question recovers accidentally erased printed text exactly",
+      "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
+      "two-finger touch zoom",
+      "reopened export resets confirmation once and preserves immediate user confirmation",
+      "explicit export confirmation and JPG",
+      "JPEG contains the sampled text repair with expected compression tolerance",
+      "valid PDF output",
+      "original bytes remain identical after all editing and exports",
+      "restore saved session including sampled text repair",
+      "model, WASM, image worker and service worker stay within Pages project path",
+      "offline reload and fresh AI inference with cached model and WASM",
+      "AI download failure clearly reported with working manual fallback",
+      "no page errors, HTTP failures, or photo upload requests"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": [],
+    "originalHash": "652c39695ce1ba10a074ea8bbc60658cc01b7dedbfee1176f15a9cdd867887c0"
+  },
+  "migration": {
+    "success": true,
+    "version": "0.6.0",
+    "date": "2026-11-03",
+    "kind": "synthetic_draft_migration",
+    "checks": [
+      "v1 and v2 hints rebuilt to v3; existing v3 retained",
+      "original bytes preserved",
+      "past, present, future, manual protection and sampled text snapshots preserved",
+      "new ink mode defaulted for all history entries",
+      "v0.5 draft can reanalyse with workbook model while keeping original and manual edits",
+      "no page errors"
+    ]
+  },
+  "realPhotoRegression": {
+    "success": true,
+    "kind": "sparse-weak-labels-and-visual-review-not-general-accuracy",
+    "threshold": 0.9,
+    "mode": "workbook",
+    "repair": "texture",
+    "pages": [
+      {
+        "page": "page09",
+        "split": "train",
+        "before": {
+          "hand": 5987,
+          "selected": 2674,
+          "coverage": 0.4466343744780357,
+          "keep": 86135,
+          "damaged": 3812,
+          "damageRate": 0.04425610959540256
+        },
+        "after": {
+          "hand": 5987,
+          "selected": 5920,
+          "coverage": 0.9888090863537665,
+          "keep": 86135,
+          "damaged": 8,
+          "damageRate": 9.287745980147443e-05
+        },
+        "outside": 0,
+        "guideCrossingPixels": 63
+      },
+      {
+        "page": "page10",
+        "split": "train",
+        "before": {
+          "hand": 5561,
+          "selected": 764,
+          "coverage": 0.137385362344902,
+          "keep": 55117,
+          "damaged": 2614,
+          "damageRate": 0.04742638387430376
+        },
+        "after": {
+          "hand": 5561,
+          "selected": 3941,
+          "coverage": 0.7086854882215429,
+          "keep": 55117,
+          "damaged": 0,
+          "damageRate": 0
+        },
+        "outside": 0,
+        "guideCrossingPixels": 46
+      },
+      {
+        "page": "page13",
+        "split": "train",
+        "before": {
+          "hand": 3810,
+          "selected": 2084,
+          "coverage": 0.546981627296588,
+          "keep": 78438,
+          "damaged": 10637,
+          "damageRate": 0.13561029093041638
+        },
+        "after": {
+          "hand": 3810,
+          "selected": 3324,
+          "coverage": 0.8724409448818897,
+          "keep": 78438,
+          "damaged": 90,
+          "damageRate": 0.0011474030444427446
+        },
+        "outside": 0,
+        "guideCrossingPixels": 114
+      },
+      {
+        "page": "page15",
+        "split": "train",
+        "before": {
+          "hand": 2230,
+          "selected": 0,
+          "coverage": 0,
+          "keep": 93427,
+          "damaged": 5841,
+          "damageRate": 0.06251940017339741
+        },
+        "after": {
+          "hand": 2230,
+          "selected": 1641,
+          "coverage": 0.7358744394618834,
+          "keep": 93427,
+          "damaged": 86,
+          "damageRate": 0.0009205047791323708
+        },
+        "outside": 0,
+        "guideCrossingPixels": 51
+      },
+      {
+        "page": "page17",
+        "split": "validation",
+        "before": {
+          "hand": 4379,
+          "selected": 1056,
+          "coverage": 0.24115094770495546,
+          "keep": 80461,
+          "damaged": 9704,
+          "damageRate": 0.12060501360907769
+        },
+        "after": {
+          "hand": 4379,
+          "selected": 4175,
+          "coverage": 0.9534140214660881,
+          "keep": 80461,
+          "damaged": 18,
+          "damageRate": 0.00022371086613390338
+        },
+        "outside": 0,
+        "guideCrossingPixels": 33
+      },
+      {
+        "page": "page18",
+        "split": "train",
+        "before": {
+          "hand": 3165,
+          "selected": 534,
+          "coverage": 0.16872037914691942,
+          "keep": 50128,
+          "damaged": 2475,
+          "damageRate": 0.049373603574848386
+        },
+        "after": {
+          "hand": 3165,
+          "selected": 2748,
+          "coverage": 0.8682464454976303,
+          "keep": 50128,
+          "damaged": 0,
+          "damageRate": 0
+        },
+        "outside": 0,
+        "guideCrossingPixels": 13
+      },
+      {
+        "page": "page21",
+        "split": "train",
+        "before": {
+          "hand": 1817,
+          "selected": 629,
+          "coverage": 0.34617501375894333,
+          "keep": 62818,
+          "damaged": 16423,
+          "damageRate": 0.26143780445095355
+        },
+        "after": {
+          "hand": 1817,
+          "selected": 1751,
+          "coverage": 0.9636763896532746,
+          "keep": 62818,
+          "damaged": 182,
+          "damageRate": 0.0028972587474927567
+        },
+        "outside": 0,
+        "guideCrossingPixels": 35
+      },
+      {
+        "page": "page22",
+        "split": "train",
+        "before": {
+          "hand": 1263,
+          "selected": 247,
+          "coverage": 0.1955661124307205,
+          "keep": 98685,
+          "damaged": 4197,
+          "damageRate": 0.042529259765921874
+        },
+        "after": {
+          "hand": 1263,
+          "selected": 657,
+          "coverage": 0.5201900237529691,
+          "keep": 98685,
+          "damaged": 241,
+          "damageRate": 0.002442113796422962
+        },
+        "outside": 0,
+        "guideCrossingPixels": 5
+      },
+      {
+        "page": "page25",
+        "split": "test",
+        "before": {
+          "hand": 2237,
+          "selected": 0,
+          "coverage": 0,
+          "keep": 89396,
+          "damaged": 3085,
+          "damageRate": 0.034509374021209
+        },
+        "after": {
+          "hand": 2237,
+          "selected": 2203,
+          "coverage": 0.9848010728654448,
+          "keep": 89396,
+          "damaged": 10,
+          "damageRate": 0.00011186182826972125
+        },
+        "outside": 0,
+        "guideCrossingPixels": 44
+      },
+      {
+        "page": "page27",
+        "split": "test",
+        "before": {
+          "hand": 2497,
+          "selected": 13,
+          "coverage": 0.005206247496996396,
+          "keep": 71404,
+          "damaged": 2807,
+          "damageRate": 0.0393115231639684
+        },
+        "after": {
+          "hand": 2497,
+          "selected": 2240,
+          "coverage": 0.8970764917901481,
+          "keep": 71404,
+          "damaged": 29,
+          "damageRate": 0.00040613971206094896
+        },
+        "outside": 0,
+        "guideCrossingPixels": 48
+      }
+    ],
+    "errors": [],
+    "sent": []
+  },
+  "limits": [
+    "Sparse reviewed regions are not full-page handwriting accuracy",
+    "Final pipeline is not a blind test; only seven pages fitted model weights",
+    "English workbook sample does not establish Chinese/Zhuyin generalization",
+    "Repair uses local inpainting and observed guide pixels, not trained generation",
+    "Faint and overlapping marks remain; manual review still required",
+    "No speed gain established; physical mobile devices unverified",
+    "Private photos, references, annotations and outputs remain local and excluded from Git"
+  ],
+  "deployment": {
+    "status": "pending"
+  }
+}

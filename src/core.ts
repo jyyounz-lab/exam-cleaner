@@ -3,7 +3,7 @@ export type Rect = { x: number; y: number; w: number; h: number };
 export type Tool = 'erase' | 'restore' | 'protect' | 'unprotect' | 'region' | 'pan' | 'sample' | 'text';
 export type BrushStroke = { tool: Exclude<Tool, 'region' | 'pan' | 'sample' | 'text'>; radius: number; points: Point[] };
 export type Stroke = BrushStroke | TextPatch;
-export type Edit = { threshold: number; inkType: 'auto'|'black'; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
+export type Edit = { threshold: number; inkType: 'auto'|'black'|'workbook'; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
 export const initialEdit = (): Edit => ({ threshold: 0.8, inkType: 'auto', color: 'none', protectPrint: true, allowNeutralInk: false, autoAnswers: true, repair: 'paper', grow: true, region: null, strokes: [] });
 export type History = { past: Edit[]; present: Edit; future: Edit[] };
 export function changeHistory(h: History, next: Edit | 'undo' | 'redo'): History {
@@ -56,13 +56,16 @@ export function colorCandidate(r: number, g: number, b: number, mode: Edit['colo
   const blue = b > r * 1.15 + 12 && b > g * 1.08 + 8 && Math.min(r, g) < 210;
   return mode === 'red' ? red : mode === 'blue' ? blue : mode === 'both' && (red || blue);
 }
-export function composeMask(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, ai?: { handwriting: Float32Array; print: Float32Array; hints?: InkHints } | null) {
+export function composeMask(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, ai?: { handwriting: Float32Array; print: Float32Array; hints?: InkHints; workbook?:WorkbookHints } | null) {
   const { width: w, height: h, data } = image, n = w * h;
   if (ai && (ai.handwriting.length !== n || ai.print.length !== n)) throw new Error('AI 遮罩尺寸與底圖不符，請重新分析。');
+  const workbook=edit.inkType==='workbook',learned=workbook?ai?.workbook:undefined;
+  if(learned&&(learned.version!==1||learned.confidence.length!==n||learned.keep.length!==n||learned.lines.length!==n||learned.crossings.length!==n))throw new Error('課本遮罩尺寸與底圖不符，請重新分析。');
   const manual = drawMasks(edit.strokes, w, h), candidate = new Uint8Array(n), mask = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     const black = edit.inkType !== 'black' || edit.allowNeutralInk && edit.region || ai?.hints?.boldInk?.[i];
-    candidate[i] = Number(!!manual.erase[i] || black && !!ai && Math.max(ai.hints ? ai.hints.confidence[i]/255 : ai.handwriting[i], edit.allowNeutralInk && edit.region ? ai.handwriting[i] : 0) >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
+    const score=workbook?(learned?.confidence[i]||0)/255:ai?Math.max(ai.hints ? ai.hints.confidence[i]/255 : ai.handwriting[i], edit.allowNeutralInk && edit.region ? ai.handwriting[i] : 0):0;
+    candidate[i] = Number(!!manual.erase[i] || black && !!ai && score >= edit.threshold || colorCandidate(data[4 * i], data[4 * i + 1], data[4 * i + 2], edit.color));
   }
   let count = 0, protectedCount = 0;
   const blocked = new Uint8Array(n);
@@ -73,8 +76,10 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
     const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
     const neutralInk = Math.max(r, g, b) - Math.min(r, g, b) < 26 && Math.min(r, g, b) < 245;
     const supported = !!ai?.hints?.colorInk[i] || !!ai?.hints?.handInk?.[i] || !!edit.autoAnswers && !!ai?.hints?.answerInk[i];
-    const protectNeutral = neutralInk && !(edit.allowNeutralInk && region) && !supported && !manual.erase[i];
-    const protectedPixel = manual.keep[i] || protectNeutral || !!ai?.hints?.structure[i] && !ai?.hints?.lineRepair?.[i] && !manual.erase[i] || edit.protectPrint && ai && (ai.print[i] >= 0.65 && !supported || ai.hints?.printInk?.[i] || ai.hints?.picture?.[i] || edit.inkType==='black' && !ai.hints?.boldInk?.[i] && neutralInk && !(edit.allowNeutralInk&&region)) && !manual.erase[i];
+    const protectNeutral = !workbook&&neutralInk && !(edit.allowNeutralInk && region) && !supported && !manual.erase[i];
+    const structure=workbook?!!learned?.lines[i]&&!learned?.crossings[i]:!!ai?.hints?.structure[i]&&!ai?.hints?.lineRepair?.[i];
+    const printProtection=workbook?!!learned?.keep[i]:!!ai&&(ai.print[i]>=.65&&!supported||!!ai.hints?.printInk?.[i]||!!ai.hints?.picture?.[i]||edit.inkType==='black'&&!ai.hints?.boldInk?.[i]&&neutralInk&&!(edit.allowNeutralInk&&region));
+    const protectedPixel = manual.keep[i] || protectNeutral || structure&&!manual.erase[i] || edit.protectPrint&&printProtection&&!manual.erase[i];
     if (selected && protectedPixel) protectedCount++;
     blocked[i] = Number(!allowed || !!manual.reject[i] || !!protectedPixel);
     if (selected && !blocked[i]) mask[i] = 255;
@@ -88,7 +93,9 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
     }
   }
   for(let i=0;i<n;i++)if(mask[i])count++;
-  return { mask, keep: manual.keep, patches: manual.patches, count, protectedCount };
+  const guideRepair=learned?new Uint8Array(n):undefined;
+  if(guideRepair)for(let i=0;i<n;i++)guideRepair[i]=Number(!!mask[i]&&!!learned!.crossings[i]&&!manual.erase[i]);
+  return { mask, keep: manual.keep, patches: manual.patches, count, protectedCount,guideRepair };
 }
 export function resizeProbabilities(input: Float32Array, width: number, height: number, outW: number, outH: number) {
   const out = new Float32Array(outW * outH);
@@ -119,4 +126,5 @@ export function sauvola(image: { width: number; height: number; data: Uint8Clamp
   return out;
 }
 import type { InkHints } from './refine';
+import type { WorkbookHints } from './workbook';
 import { patchBounds, type TextPatch } from './textRepair.ts';

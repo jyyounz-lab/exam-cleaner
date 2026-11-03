@@ -72,3 +72,8 @@ python convert_phti.py
 - 模型輸出手寫區域候選，不直接生成題目或乾淨影像。清除應由確認後的遮罩及局部填補完成。
 - 原圖需保持不變，保留區優先，所有清除可復原；AI 結果需在匯出前檢查。
 - 本機 CPU 測試時間不能當作 iPhone／Android WASM／WebGPU 時間。
+
+
+## 0.6.0 補強模型
+
+原 PHTI FCNN 檔案與權重不變。另新增以私人配對課本訓練的元件分類器，僅用於獨立的彩色課本／淡鉛筆模式；詳見 [WORKBOOK-MODEL-CARD.md](WORKBOOK-MODEL-CARD.md)。此新增訓練不改變上述 PHTI 轉換及驗證紀錄。

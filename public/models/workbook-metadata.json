@@ -1,0 +1,45 @@
+{
+  "id": "workbook-ink-1",
+  "name": "彩色課本淡鉛筆補強模型（實驗）",
+  "version": "2026-11-02-1",
+  "file": "workbook-ink.json",
+  "sha256": "2d339a53f47b75136ee0ceb3a409c8b5a898aba2757402742f7bf9c25c9cee5e",
+  "bytes": 50404,
+  "architecture": "80 depth-3 gradient boosted decision trees over connected ink components",
+  "features": 27,
+  "training": {
+    "pages": {
+      "train": [
+        "page09",
+        "page10",
+        "page13",
+        "page15",
+        "page18",
+        "page21",
+        "page22"
+      ],
+      "validation": [
+        "page17"
+      ],
+      "test": [
+        "page25",
+        "page27"
+      ]
+    },
+    "labeledComponents": 2379,
+    "positiveComponents": 107,
+    "source": "ten local third-party comparison pairs; sparse reviewed weak labels",
+    "seed": 20261102,
+    "featureDataSha256": "9537a2cd19f513804d16f112465937af85ef687c8b3e2366a61bea438e508762"
+  },
+  "recommendedThreshold": 0.9,
+  "runsLocally": true,
+  "containsImages": false,
+  "limitations": [
+    "Small English workbook dataset; not a general Chinese/Zhuyin model",
+    "Comparison outputs contain defects and are not clean ground truth",
+    "Cannot infer hidden original printed pixels",
+    "Final safety guards were adjusted after reviewing evaluation-page errors; final pipeline numbers are development measurements, not a blind benchmark",
+    "Repair uses local inpainting and observed guide pixels; no trained image-generation repair model"
+  ]
+}

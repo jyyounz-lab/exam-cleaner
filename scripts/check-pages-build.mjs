@@ -15,6 +15,8 @@ assert.equal(manifest.scope, './');
 assert.equal(manifest.icons[0].src, './favicon.svg');
 const metadata = JSON.parse(await readFile('dist/models/metadata.json', 'utf8'));
 assert.equal(createHash('sha256').update(await readFile(`dist/models/${metadata.file}`)).digest('hex'), metadata.sha256);
+const workbookMetadata=JSON.parse(await readFile('dist/models/workbook-metadata.json','utf8'));
+assert.equal(createHash('sha256').update(await readFile(`dist/models/${workbookMetadata.file}`)).digest('hex'),workbookMetadata.sha256);
 
 const events = {}, stored = [], removed = [];
 let cacheName, pending, offlineUrl;
@@ -36,6 +38,8 @@ for (const file of stored) {
   assert.ok((await stat(`dist/${file.slice(base.length)}`)).isFile());
 }
 assert.ok(stored.includes(`${base}models/phti-fcnn.onnx`));
+assert.ok(stored.includes(`${base}models/workbook-ink.json`));
+assert.ok(stored.includes(`${base}cv.worker.v4.js`));
 assert.ok(stored.includes(`${base}vendor/opencv.js`));
 assert.ok(stored.some(file => file.endsWith('.wasm')));
 events.activate({ waitUntil(p) { pending = p; } }); await pending;
@@ -43,4 +47,4 @@ assert.deepEqual(removed, [cacheName.replace(/[^-]+$/, 'previous')]);
 events.fetch({ request: { url: `https://example.test${base}`, method: 'GET', mode: 'navigate' }, respondWith(p) { pending = p; } });
 assert.equal((await pending).offline, true);
 assert.equal(offlineUrl, `${base}index.html`);
-console.log(`Build verified: ${base}, ${stored.length} cached files, unchanged AI model, scoped cache cleanup and offline fallback.`);
+console.log(`Build verified: ${base}, ${stored.length} cached files, both model hashes, scoped cache cleanup and offline fallback.`);

@@ -3,6 +3,7 @@ import wasmModuleUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-th
 import wasmBinaryUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
 import { sauvola } from './core';
 import { refineInk } from './refine';
+import { analyseWorkbook, validateWorkbookModel } from './workbook';
 ort.env.wasm.wasmPaths = { mjs: wasmModuleUrl, wasm: wasmBinaryUrl };
 ort.env.wasm.numThreads = 1;
 let session: ort.InferenceSession | undefined;
@@ -37,11 +38,15 @@ self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
         print[dst] += values[src] * weight; handwriting[dst] += values[src + 65536] * weight; weights[dst] += weight;
       }
       tensor.dispose(); for (const t of Object.values(results)) t.dispose();
-      done++; progress(8 + Math.round(done / total * 91), `AI 分析中：${done}／${total} 個區塊`);
+      done++; progress(8 + Math.round(done / total * 86), `AI 分析中：${done}／${total} 個區塊`);
     }
     for (let i = 0; i < n; i++) { handwriting[i] /= weights[i] || 1; print[i] /= weights[i] || 1; }
-    progress(99, '正在補齊筆畫、辨識答案區與保護底線…');
+    progress(97, '正在補齊筆畫、辨識答案區與保護底線…');
     const hints = refineInk(image, { handwriting, print }, binary);
-    self.postMessage({ type: 'result', handwriting, print, hints, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.handInk.buffer, hints.boldInk.buffer, hints.printInk.buffer, hints.picture.buffer, hints.structure.buffer, hints.lineRepair.buffer]);
+    progress(99, '正在辨識淡鉛筆與課本印刷內容…');
+    const response=await fetch(`${import.meta.env.BASE_URL}models/workbook-ink.json`);
+    if(!response.ok)throw new Error('課本補強模型尚未下載完成，請連線後重試。');
+    const workbook=analyseWorkbook(image,{handwriting,print},binary,validateWorkbookModel(await response.json()));
+    self.postMessage({ type: 'result', handwriting, print, hints, workbook, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.handInk.buffer, hints.boldInk.buffer, hints.printInk.buffer, hints.picture.buffer, hints.structure.buffer, hints.lineRepair.buffer,workbook.confidence.buffer,workbook.keep.buffer,workbook.lines.buffer,workbook.crossings.buffer]);
   } catch (error) { self.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };
