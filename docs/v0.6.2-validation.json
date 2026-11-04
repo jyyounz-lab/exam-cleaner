@@ -1,0 +1,117 @@
+{
+  "date": "2026-11-04",
+  "version": "0.6.2",
+  "status": "local-validation-passed-deployment-pending",
+  "changes": [
+    "Keep AI-cleaned preview when entering semi-auto and manual editing",
+    "Append independently captured region masks to existing cleaning instead of clipping the global AI mask",
+    "Restore original pixels within selected regions, with ordered brush and sampled-text interactions",
+    "Multiple numbered regions, per-region removal and undo/redo",
+    "Next-box settings preserve prior region snapshots",
+    "Persist region operations in existing local drafts; retain legacy single-region results with an explicit full-page reset control"
+  ],
+  "core": {
+    "passed": 38,
+    "failed": 0
+  },
+  "functional": {
+    "success": true,
+    "checks": [
+      "EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit",
+      "works without cross-origin isolation headers as on GitHub Pages",
+      "home responsive 320",
+      "home responsive 390",
+      "home responsive 768",
+      "home responsive 1440",
+      "demo imports",
+      "fixed synthetic fixture imports for cross-platform image regression",
+      "actual ONNX WASM inference and OpenCV inpainting",
+      "trained workbook mode, 90% threshold, texture repair and pixel-exact saved-session restoration",
+      "coarse black mode switches locally and recommends texture repair",
+      "default AI preview preserves dark printed text on the demonstration",
+      "editor responsive 320",
+      "editor responsive 390",
+      "editor responsive 768",
+      "editor responsive 1440",
+      "semi-auto settings, manual protect, undo and redo",
+      "IndexedDB save",
+      "actual inpainting preserves all manual keep pixels and all pixels outside final mask",
+      "manual correction responds and Restore question recovers accidentally erased printed text exactly",
+      "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
+      "two-finger touch zoom",
+      "reopened export resets confirmation once and preserves immediate user confirmation",
+      "explicit export confirmation and JPG",
+      "JPEG contains the sampled text repair with expected compression tolerance",
+      "valid PDF output",
+      "original bytes remain identical after all editing and exports",
+      "restore saved session including sampled text repair",
+      "model, WASM, image worker and service worker stay within Pages project path",
+      "offline reload and fresh AI inference with cached model and WASM",
+      "AI download failure clearly reported with working manual fallback",
+      "no page errors, HTTP failures, or photo upload requests"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": [],
+    "originalHash": "652c39695ce1ba10a074ea8bbc60658cc01b7dedbfee1176f15a9cdd867887c0"
+  },
+  "regions": {
+    "success": true,
+    "version": "0.6.2",
+    "checks": [
+      "enter semi-auto on unchanged AI-cleaned preview",
+      "next-box threshold and color settings preserve existing result",
+      "two separate supplementary boxes accumulate without restoring earlier AI or local cleaning",
+      "restore box returns original ink only in selected area",
+      "region undo and redo are pixel-exact",
+      "remove one region while retaining the other regions; removal is undoable",
+      "manual step retains accumulated cleaned preview",
+      "original bytes and independently captured region masks saved in IndexedDB",
+      "reload restores all region operations and exact cleaned pixels",
+      "offline reload restores regional edits",
+      "multi-region controls fit 320, 390, 768 and 1440px layouts"
+    ],
+    "saved": {
+      "originalHash": "be7e215f0a1abe488aec2ac3fb1672e4f7b76f1cdca610808326c58b962966fb",
+      "tools": [
+        "region",
+        "region",
+        "restore-region"
+      ],
+      "typedMasks": true,
+      "region": null
+    },
+    "errors": []
+  },
+  "migration": {
+    "success": true,
+    "version": "0.6.2",
+    "date": "2026-11-04",
+    "kind": "synthetic_draft_migration",
+    "checks": [
+      "v1 and v2 hints rebuilt to v3; existing v3 retained",
+      "original bytes preserved",
+      "past, present, future, manual protection and sampled text snapshots preserved",
+      "new ink mode defaulted for all history entries",
+      "v0.5 draft can reanalyse with workbook model while keeping original and manual edits",
+      "v0.6.0 workbook hints automatically refresh with model revision 2; original, settings and manual edits preserved",
+      "no page errors"
+    ]
+  },
+  "models": {
+    "changed": false,
+    "hashes": {
+      "phti-fcnn.onnx": "42c370c5517d897362981e026a940b6e26ed3121bf1cfe70e868d8eac62e0022",
+      "workbook-ink-v2.json": "a260bc3cc2d981be86e345acc052bfe07e6733e400a02780c5b5bff4b62d09da"
+    }
+  },
+  "limits": [
+    "Regional supplement still requires accepted model or color candidates; empty selections retain all previous results and offer brush correction.",
+    "Restoring a region also restores original handwriting inside it; small restoration regions are recommended.",
+    "Regression fixtures for this workflow are synthetic; no new handwriting accuracy or training claim.",
+    "Physical iPhone/Android devices are unverified."
+  ],
+  "deployment": {
+    "status": "pending"
+  }
+}

@@ -1,11 +1,67 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { composeMask, drawMasks, validQuad, initialEdit, changeHistory, sauvola, colorCandidate } from '../src/core.ts';
+import { composeMask, drawMasks, selectRegion, regionBounds, validQuad, initialEdit, changeHistory, sauvola, colorCandidate } from '../src/core.ts';
 import { refineInk } from '../src/refine.ts';
 import { printLayout } from '../src/printLayout.ts';
 import { applyTextPatches, patchBounds, sampleText, type TextPatch } from '../src/textRepair.ts';
 import type { Stroke } from '../src/core.ts';
 const image = (w = 20, h = 20) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4).fill(255) });
+
+test('多框補清除累加於整頁 AI，低門檻和延伸只作用框內，空框不擦紙面', () => {
+  const img=image(),ai={handwriting:new Float32Array(400),print:new Float32Array(400)},edit=initialEdit();
+  ai.handwriting[42]=.99;ai.handwriting[147]=.65;ai.handwriting[294]=.65;ai.handwriting[168]=.99;ai.print[168]=.99;
+  const before=composeMask(img,edit,ai).mask;
+  const a=selectRegion(img,{...edit,threshold:.5},{x:.3,y:.3,w:.15,h:.15},ai);
+  const b=selectRegion(img,{...edit,threshold:.5},{x:.65,y:.65,w:.15,h:.15},ai);
+  const after=composeMask(img,{...edit,strokes:[a,b]},ai).mask;
+  assert.equal(after[42],255);assert.equal(after[147],255);assert.equal(after[294],255);assert.equal(after[168],0);
+  for(let y=0;y<20;y++)for(let x=0;x<20;x++)if(![a,b].some(s=>{const r=regionBounds(s.rect,20,20);return x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;}))assert.equal(after[y*20+x],before[y*20+x]);
+  const empty=selectRegion(img,edit,{x:.9,y:0,w:.1,h:.1},ai);assert.equal(empty.tool,'region');if(empty.tool==='region')assert.equal(empty.mask.some(Boolean),false);
+  assert.deepEqual(composeMask(img,{...edit,threshold:.98,strokes:[a,b,empty]},ai).mask,after,'next settings cannot change saved local candidates');
+});
+
+test('局部還原與多框共用操作順序，復原重做及重新載入保留同一遮罩', () => {
+  const img=image(),ai={handwriting:new Float32Array(400),print:new Float32Array(400)},edit={...initialEdit(),grow:false};
+  ai.handwriting[42]=.99;ai.handwriting[147]=.6;
+  const clear=selectRegion(img,{...edit,threshold:.5},{x:.3,y:.3,w:.2,h:.2},ai);
+  let h={past:[] as typeof edit[],present:edit,future:[] as typeof edit[]};
+  h=changeHistory(h,{...edit,strokes:[clear]});const both=composeMask(img,h.present,ai).mask;
+  h=changeHistory(h,{...h.present,strokes:[clear,{tool:'restore-region',rect:{x:0,y:0,w:.2,h:.2}}]});
+  assert.equal(composeMask(img,h.present,ai).mask[42],0);assert.equal(composeMask(img,h.present,ai).mask[147],255);
+  h=changeHistory(h,'undo');assert.deepEqual(composeMask(img,h.present,ai).mask,both);h=changeHistory(h,'redo');
+  assert.deepEqual(composeMask(img,structuredClone(h.present),ai).mask,composeMask(img,h.present,ai).mask);
+  const restored={...edit,strokes:[clear,{tool:'restore-region' as const,rect:clear.rect}]};assert.equal(composeMask(img,restored,ai).mask[147],0);
+  assert.equal(composeMask(img,{...edit,strokes:[...restored.strokes,clear]},ai).mask[147],255);
+  assert.equal(composeMask(img,{...edit,strokes:[clear,{tool:'restore',radius:.02,points:[{x:.35,y:.35}]}]},ai).mask[147],0);
+});
+
+test('框選尊重人工保留與同字修補順序，還原框取回底圖且取消框內補字', () => {
+  const img=image(),edit={...initialEdit(),grow:false},ai={handwriting:new Float32Array(400).fill(.6),print:new Float32Array(400)};
+  const rect={x:.3,y:.3,w:.2,h:.2},clear=selectRegion(img,{...edit,threshold:.5},rect,ai);
+  const patch:TextPatch={tool:'text',source:{x:.1,y:.1,w:.15,h:.15},target:{x:.4,y:.4}};
+  const restored=drawMasks([patch,{tool:'restore-region',rect}],20,20);assert.equal(restored.patches![168],0);assert.equal(restored.reject[168],1);
+  const later=drawMasks([{tool:'restore-region',rect},patch],20,20);assert.equal(later.patches![168],2);
+  const cleared=drawMasks([patch,clear],20,20);assert.equal(cleared.patches![168],0);
+  const keep:Stroke={tool:'protect',radius:.1,points:[{x:.4,y:.4}]};
+  assert.equal(composeMask(img,{...edit,strokes:[keep,clear]},ai).mask[168],0);
+  const safe=selectRegion(img,{...edit,threshold:.5,strokes:[keep]},rect,ai);assert.equal(composeMask(img,{...edit,strokes:[safe]},ai).mask[168],0);
+});
+
+test('區域遮罩有尺寸驗證，舊版單框進度與新框可以並存', () => {
+  const img=image(),ai={handwriting:new Float32Array(400).fill(.9),print:new Float32Array(400)},edit={...initialEdit(),region:{x:0,y:0,w:.2,h:.2}};
+  const clear=selectRegion(img,edit,{x:.7,y:.7,w:.2,h:.2},ai);
+  assert.equal(composeMask(img,edit,ai).mask[315],0);assert.equal(composeMask(img,{...edit,strokes:[clear]},ai).mask[315],255);
+  assert.throws(()=>selectRegion(img,edit,{x:NaN,y:0,w:.2,h:.2},ai),/範圍/);
+  if(clear.tool==='region')assert.throws(()=>composeMask(img,{...edit,strokes:[{...clear,imageWidth:10}]},ai),/尺寸/);
+});
+
+test('課本局部補清除保留導線修補資訊與印刷保護', () => {
+  const img=image(),n=400,workbook={version:1 as const,modelRevision:2,confidence:new Uint8Array(n),keep:new Uint8Array(n),lines:new Uint8Array(n),crossings:new Uint8Array(n)};
+  workbook.confidence[147]=180;workbook.lines[147]=1;workbook.crossings[147]=1;workbook.confidence[168]=255;workbook.keep[168]=1;
+  const ai={handwriting:new Float32Array(n),print:new Float32Array(n),workbook},edit={...initialEdit(),inkType:'workbook' as const,grow:false};
+  const clear=selectRegion(img,{...edit,threshold:.5},{x:.3,y:.3,w:.2,h:.2},ai),result=composeMask(img,{...edit,strokes:[clear]},ai);
+  assert.equal(result.mask[147],255);assert.equal(result.guideRepair![147],1);assert.equal(result.mask[168],0);
+});
 
 test('被保護的候選不能向周圍紙面擴張，已接受候選不能跨越保護線', () => {
   const img=image(),ai={handwriting:new Float32Array(400),print:new Float32Array(400)};

@@ -77,7 +77,7 @@ try {
   await page.locator('.step-nav button').nth(3).click(); await page.getByRole('button', { name: '保留', exact: true }).click();
   const canvas = page.getByLabel('考卷遮罩編輯區'); const box = await canvas.boundingBox();
   await page.mouse.move(box.x + box.width * .42, box.y + box.height * .24); await page.mouse.down(); await page.mouse.move(box.x + box.width * .52, box.y + box.height * .24, { steps: 6 }); await page.mouse.up();
-  await page.getByRole('button', { name: '復原', exact: true }).click(); await page.getByRole('button', { name: '重做', exact: true }).click(); checks.push('semi-auto color, manual protect, undo and redo');
+  await page.getByRole('button', { name: '復原', exact: true }).click(); await page.getByRole('button', { name: '重做', exact: true }).click(); checks.push('semi-auto settings, manual protect, undo and redo');
   await page.getByRole('button', { name: '儲存進度', exact: true }).click(); await page.getByText(/編輯進度已儲存在此瀏覽器/).waitFor(); checks.push('IndexedDB save');
   await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent === '確認匯出')?.disabled, { timeout: 90000 });
   await page.evaluate(() => { const canvases = document.querySelectorAll('.paper-stage canvas'); window.qaPixels = { base: canvases[0].getContext('2d').getImageData(0, 0, canvases[0].width, canvases[0].height), overlay: canvases[1].getContext('2d').getImageData(0, 0, canvases[1].width, canvases[1].height) }; });

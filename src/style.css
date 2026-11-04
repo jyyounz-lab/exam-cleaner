@@ -8,3 +8,5 @@
 .repair-select{width:100%;padding:10px 9px;border:1px solid var(--border);border-radius:6px;background:var(--paper);color:var(--dark);font:inherit;font-size:12px;margin-top:7px}
 
 .text-repair .button{margin-top:10px}.text-repair .dialog-preview{margin:10px 0}.text-repair .dialog-preview canvas{max-width:100%;width:auto;max-height:90px;border:1px solid var(--border)}.overlay.text,.overlay.sample{cursor:crosshair}
+
+.region-list>div{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;border-bottom:1px solid var(--border)}.region-count{font-size:12px;color:var(--green);margin:12px 0}.panel-block>.button.full+.button.full{margin-top:8px}

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { canvasFor } from './images';
-import type { Point, Rect, BrushStroke, Tool } from './core';
+import type { Point, Rect, BrushStroke, Tool, RegionStroke } from './core';
 
-type Props = { image: ImageData; mask: Uint8Array; keep: Uint8Array; view: string; tool: Tool; brush: number; zoom: number; crop: boolean; quad: Point[]; region: Rect | null; sample: Rect | null; disabled: boolean; onZoom: (z: number) => void; onQuad: (q: Point[]) => void; onStroke: (s: BrushStroke) => void; onRegion: (r: Rect) => void; onSample: (r: Rect) => void; onPatch: (p: Point) => void };
+type Props = { image: ImageData; mask: Uint8Array; keep: Uint8Array; view: string; tool: Tool; brush: number; zoom: number; crop: boolean; quad: Point[]; region: Rect | null; regions: RegionStroke[]; sample: Rect | null; disabled: boolean; onZoom: (z: number) => void; onQuad: (q: Point[]) => void; onStroke: (s: BrushStroke) => void; onRegion: (r: Rect) => void; onSample: (r: Rect) => void; onPatch: (p: Point) => void };
 export default function Stage(p: Props) {
   const board = useRef<HTMLDivElement>(null), base = useRef<HTMLCanvasElement>(null), overlay = useRef<HTMLCanvasElement>(null);
   const drag = useRef<{ kind: 'corner' | 'stroke' | 'region' | 'pan' | 'patch'; corner?: number; points: Point[]; quad?: Point[]; startX: number; startY: number; scrollX: number; scrollY: number } | null>(null);
@@ -21,8 +21,12 @@ export default function Stage(p: Props) {
       for (const pt of q) { ctx.beginPath(); ctx.arc(Math.max(c.width * 0.008, Math.min(c.width * 0.992, pt.x * c.width)), Math.max(c.width * 0.008, Math.min(c.height - c.width * 0.008, pt.y * c.height)), c.width / 65, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke(); }
     }
     if (!p.crop && p.region) { const r = p.region; ctx.strokeStyle = '#4761c2'; ctx.lineWidth = c.width / 300; ctx.setLineDash([c.width / 80, c.width / 130]); ctx.strokeRect(r.x * c.width, r.y * c.height, r.w * c.width, r.h * c.height); ctx.setLineDash([]); }
+    if (!p.crop && p.view !== 'base') p.regions.forEach((s,index) => {
+      const r=s.rect;ctx.strokeStyle=s.tool==='restore-region'?'#168e66':'#4761c2';ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=c.width/500;ctx.setLineDash([c.width/100,c.width/150]);
+      ctx.strokeRect(r.x*c.width,r.y*c.height,r.w*c.width,r.h*c.height);ctx.setLineDash([]);ctx.font=`${Math.max(12,c.width/55)}px sans-serif`;ctx.fillText(String(index+1),r.x*c.width+3,Math.max(c.width/50,r.y*c.height-3));
+    });
   }
-  useEffect(() => { const c = base.current!; c.width = p.image.width; c.height = p.image.height; c.getContext('2d')!.drawImage(canvasFor(p.image), 0, 0); overlay.current!.width = c.width; overlay.current!.height = c.height; drawOverlay(); }, [p.image, p.mask, p.keep, p.view, p.crop, p.quad, p.region]);
+  useEffect(() => { const c = base.current!; c.width = p.image.width; c.height = p.image.height; c.getContext('2d')!.drawImage(canvasFor(p.image), 0, 0); overlay.current!.width = c.width; overlay.current!.height = c.height; drawOverlay(); }, [p.image, p.mask, p.keep, p.view, p.crop, p.quad, p.region, p.regions]);
   const point = (e: React.PointerEvent): Point => { const r = overlay.current!.getBoundingClientRect(); return { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) }; };
   function down(e: React.PointerEvent<HTMLCanvasElement>) {
     if (p.disabled || e.button !== 0) return;
@@ -30,7 +34,7 @@ export default function Stage(p: Props) {
     if (fingers.current.size === 2) { const [a, b] = [...fingers.current.values()]; pinch.current = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), zoom: p.zoom, current: p.zoom }; drag.current = null; drawOverlay(); e.currentTarget.setPointerCapture(e.pointerId); return; }
     const at = point(e), common = { points: [at], startX: e.clientX, startY: e.clientY, scrollX: board.current!.scrollLeft, scrollY: board.current!.scrollTop };
     if (p.crop) { const nearest = p.quad.map((v, i) => ({ i, d: Math.hypot(v.x - at.x, (v.y - at.y) * p.image.height / p.image.width) })).sort((a, b) => a.d - b.d)[0]; if (nearest.d > 0.09) return; drag.current = { ...common, kind: 'corner', corner: nearest.i, quad: p.quad.map(v => ({ ...v })) }; }
-    else drag.current = { ...common, kind: p.tool === 'sample' ? 'region' : p.tool === 'text' && p.sample && p.view === 'result' ? 'patch' : p.tool === 'text' || p.view === 'base' || p.tool === 'pan' ? 'pan' : p.tool === 'region' ? 'region' : 'stroke' };
+    else drag.current = { ...common, kind: p.tool === 'sample' ? 'region' : p.tool === 'text' && p.sample && p.view === 'result' ? 'patch' : p.tool === 'text' || p.view === 'base' || p.tool === 'pan' ? 'pan' : p.tool === 'region' || p.tool === 'restore-region' ? 'region' : 'stroke' };
     e.currentTarget.setPointerCapture(e.pointerId);
     if (drag.current.kind === 'stroke') drawDraft(at, at);
   }

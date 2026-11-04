@@ -1,0 +1,55 @@
+import { chromium } from 'playwright';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const url=process.env.APP_URL||'http://127.0.0.1:4174/exam-cleaner/';
+const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
+const context=await browser.newContext({viewport:{width:1440,height:1200}}),page=await context.newPage(),errors=[],checks=[];
+page.on('pageerror',e=>errors.push(e.message));
+const button=name=>page.getByRole('button',{name,exact:true});
+const ready=async()=>{await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));return page.waitForFunction(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent==='確認匯出');return b&&!b.disabled;},null,{timeout:90000});};
+const pixels=()=>page.evaluate(async()=>{const c=document.querySelector('.paper-stage canvas'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return [...new Uint8Array(await crypto.subtle.digest('SHA-256',d))].map(v=>v.toString(16).padStart(2,'0')).join('');});
+async function drag(rect){
+ const count=await page.locator('.region-list>div').count();
+ const canvas=page.getByLabel('考卷遮罩編輯區');await canvas.scrollIntoViewIfNeeded();
+ await page.locator('.board').evaluate(e=>e.scrollTop=0);
+ const b=await canvas.boundingBox();await page.mouse.move(b.x+b.width*rect.x,b.y+b.height*rect.y);await page.mouse.down();await page.mouse.move(b.x+b.width*(rect.x+rect.w),b.y+b.height*(rect.y+rect.h),{steps:6});await page.mouse.up();await page.waitForFunction(count=>document.querySelectorAll('.region-list>div').length===count+1,count);await ready();
+}
+async function ink(){return page.evaluate(()=>{const c=document.querySelector('.paper-stage canvas'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return [40,140,240].map(x=>[...d.slice((60*c.width+x)*4,(60*c.width+x)*4+3)]);});}
+try{
+ await page.goto(url,{waitUntil:'networkidle'});
+ const originalHash=await page.evaluate(async()=>{
+  const c=document.createElement('canvas');c.width=300;c.height=420;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,300,420);ctx.fillStyle='#b42c27';for(const x of [40,140,240])ctx.fillRect(x-3,50,7,25);
+  ctx.fillStyle='#222';ctx.font='18px Arial';ctx.fillText('Keep this printed question',20,180);
+  const blob=await new Promise(resolve=>c.toBlob(resolve));const n=300*420,hints={version:3,answerRegions:0};
+  for(const key of ['confidence','colorInk','answerInk','structure','lineRepair','handInk','boldInk','printInk','picture'])hints[key]=new Uint8Array(n);
+  const handwriting=new Float32Array(n),print=new Float32Array(n);
+  for(const cx of [40,140,240])for(let y=50;y<75;y++)for(let x=cx-3;x<cx+4;x++){const i=y*300+x;handwriting[i]=cx===40?.99:.65;hints.confidence[i]=cx===40?252:166;hints.colorInk[i]=1;}
+  const edit={threshold:.8,inkType:'auto',color:'none',protectPrint:true,allowNeutralInk:false,autoAnswers:true,repair:'paper',grow:true,region:null,strokes:[]};
+  const draft={version:1,original:new File([blob],'synthetic-regions.png',{type:'image/png'}),work:blob,history:{past:[],present:edit,future:[]},ai:{handwriting,print,hints,elapsed:1,tiles:1},savedAt:Date.now()};
+  const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onupgradeneeded=()=>r.result.createObjectStore('drafts');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put(draft,'current');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);});db.close();
+  return [...new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer()))].map(v=>v.toString(16).padStart(2,'0')).join('');
+ });
+ await page.reload();await page.getByRole('button',{name:/繼續編輯/}).click();await ready();const base=await pixels();
+ assert.deepEqual(await ink(),[[255,255,255],[180,44,39],[180,44,39]]);
+ await button('需要調整，進入半自動').click();assert.equal(await button('清除預覽').getAttribute('aria-pressed'),'true');assert.equal(await pixels(),base);checks.push('enter semi-auto on unchanged AI-cleaned preview');
+ await page.locator('#region-threshold').press('Home');await button('藍筆').click();assert.equal(await pixels(),base);await button('關閉').click();checks.push('next-box threshold and color settings preserve existing result');
+ await drag({x:.42,y:.1,w:.1,h:.1});await page.getByText('已套用 1 個框選',{exact:true}).waitFor();const first=await pixels();assert.deepEqual(await ink(),[[255,255,255],[255,255,255],[180,44,39]]);
+ await drag({x:.75,y:.1,w:.1,h:.1});await page.getByText('已套用 2 個框選',{exact:true}).waitFor();const both=await pixels();assert.deepEqual(await ink(),[[255,255,255],[255,255,255],[255,255,255]]);checks.push('two separate supplementary boxes accumulate without restoring earlier AI or local cleaning');
+ await button('框選還原原圖').click();await drag({x:.1,y:.1,w:.1,h:.1});const restored=await pixels();assert.deepEqual(await ink(),[[180,44,39],[255,255,255],[255,255,255]]);checks.push('restore box returns original ink only in selected area');
+ await button('復原').click();await ready();assert.equal(await pixels(),both);await button('重做').click();await ready();assert.equal(await pixels(),restored);checks.push('region undo and redo are pixel-exact');
+ await button('移除第 1 個框選').click();await ready();assert.deepEqual(await ink(),[[180,44,39],[180,44,39],[255,255,255]]);await button('復原').click();await ready();assert.equal(await pixels(),restored);checks.push('remove one region while retaining the other regions; removal is undoable');
+ await button('需要精修，進入手動').click();assert.equal(await button('清除預覽').getAttribute('aria-pressed'),'true');assert.equal(await pixels(),restored);checks.push('manual step retains accumulated cleaned preview');
+ await button('儲存進度').click();await page.getByText(/編輯進度已儲存在此瀏覽器/).waitFor();
+ const saved=await page.evaluate(async()=>{
+  const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();
+  return {originalHash:[...new Uint8Array(await crypto.subtle.digest('SHA-256',await d.original.arrayBuffer()))].map(v=>v.toString(16).padStart(2,'0')).join(''),tools:d.history.present.strokes.map(s=>s.tool),typedMasks:d.history.present.strokes.filter(s=>s.tool==='region').every(s=>s.mask instanceof Uint8Array&&s.mask.some(Boolean)),region:d.history.present.region};
+ });
+ assert.equal(saved.originalHash,originalHash);assert.deepEqual(saved.tools,['region','region','restore-region']);assert.equal(saved.typedMasks,true);assert.equal(saved.region,null);checks.push('original bytes and independently captured region masks saved in IndexedDB');
+ await page.reload();await page.getByRole('button',{name:/繼續編輯/}).click();await ready();assert.equal(await pixels(),restored);checks.push('reload restores all region operations and exact cleaned pixels');
+ await page.getByText('工具與 AI 已可離線使用',{exact:true}).waitFor({timeout:90000});await context.setOffline(true);await page.reload();await page.getByRole('button',{name:/繼續編輯/}).click();await ready();assert.equal(await pixels(),restored);checks.push('offline reload restores regional edits');await context.setOffline(false);
+ await button('需要調整，進入半自動').click();await page.getByText('已套用 3 個框選',{exact:true}).waitFor();
+ for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}checks.push('multi-region controls fit 320, 390, 768 and 1440px layouts');
+ await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/regions-qa.png',fullPage:true});assert.deepEqual(errors,[]);
+ const report={success:true,version:JSON.parse(await readFile('package.json','utf8')).version,checks,saved,errors};await writeFile('test-results/regions-qa.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+}catch(e){await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/regions-qa-failure.png',fullPage:true});console.log('CHECKS',checks);console.log('STATE',await page.locator('.region-count').innerText().catch(()=>''),await page.locator('.mask-summary').innerText().catch(()=>''));throw e;}finally{await browser.close();}
