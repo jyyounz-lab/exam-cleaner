@@ -1,7 +1,7 @@
 {
   "date": "2026-11-05",
   "version": "0.6.3",
-  "status": "local-validated-pending-deployment",
+  "status": "published-and-live-verified",
   "changes": [
     "Explicit pencil and paper-relative faded red/blue regional selection in all ink modes",
     "Preserve other-colored printed borders, dark text edges and manual keep regions",
@@ -153,5 +153,83 @@
     "Overlaps and dark pencil fragments can remain",
     "No model retraining or generative text reconstruction",
     "Phone hardware and general accuracy not validated"
-  ]
+  ],
+  "deployment": {
+    "commit": "b96188089573adb399ff10961ed31da1c2ff6ba9",
+    "runId": 42039356319,
+    "url": "https://github.com/jyyounz-lab/exam-cleaner/actions/runs/42039356319",
+    "build": "success",
+    "deploy": "success",
+    "coreChecks": 42,
+    "browserChecks": 32,
+    "regionChecks": 20,
+    "migrationChecks": 7
+  },
+  "live": {
+    "date": "2026-11-05",
+    "version": "0.6.3",
+    "url": "https://jyyounz-lab.github.io/exam-cleaner/",
+    "success": true,
+    "hashes": {
+      "phti-fcnn.onnx": "42c370c5517d897362981e026a940b6e26ed3121bf1cfe70e868d8eac62e0022",
+      "workbook-ink-v2.json": "a260bc3cc2d981be86e345acc052bfe07e6733e400a02780c5b5bff4b62d09da"
+    },
+    "learned": {
+      "version": 1,
+      "revision": 2,
+      "pixels": 1992000,
+      "expected": 1992000,
+      "mode": "workbook"
+    },
+    "ai": "AI 清除與修復完成\n35 區塊 · 推論 14.6 秒",
+    "checks": [
+      "published footer v0.6.3",
+      "both deployed model hashes match local files",
+      "actual ONNX and trained classifier inference plus OpenCV repair",
+      "workbook mode retains 90% threshold through calibration",
+      "texture repair and export ready",
+      "trained model hints saved to IndexedDB",
+      "no page errors, HTTP failures or photo uploads"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": []
+  },
+  "liveRegions": {
+    "success": true,
+    "version": "0.6.3",
+    "checks": [
+      "enter semi-auto on unchanged AI-cleaned preview",
+      "next-box threshold and color settings preserve existing result",
+      "two separate supplementary boxes accumulate without restoring earlier AI or local cleaning",
+      "restore box returns original ink only in selected area",
+      "region undo and redo are pixel-exact",
+      "remove one region while retaining the other regions; removal is undoable",
+      "manual step retains accumulated cleaned preview",
+      "original bytes and independently captured region masks saved in IndexedDB",
+      "reload restores all region operations and exact cleaned pixels",
+      "offline reload restores regional edits",
+      "multi-region controls fit 320, 390, 768 and 1440px layouts",
+      "explicit pencil removes low-confidence neutral ink on warm paper without removing nearby red",
+      "reapply adds red candidates to the same frame and preserves its earlier pencil cleanup",
+      "reapply with no new matching candidates keeps existing cleanup",
+      "reapply can be undone and redone without mutating earlier history",
+      "nine successive frames clear faded red including frames 7–9 while preserving the first frame",
+      "explicit blue removes faded blue on warm paper",
+      "reapply keeps later restore-frame operation in control",
+      "faint-ink masks, cumulative reapply and later restoration survive saved-state reload",
+      "five ink targets and reapply buttons fit narrow and desktop screens"
+    ],
+    "saved": {
+      "originalHash": "be7e215f0a1abe488aec2ac3fb1672e4f7b76f1cdca610808326c58b962966fb",
+      "tools": [
+        "region",
+        "region",
+        "restore-region"
+      ],
+      "typedMasks": true,
+      "region": null
+    },
+    "errors": []
+  }
 }
