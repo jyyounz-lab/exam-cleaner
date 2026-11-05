@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-05",
+  "version": "0.6.3",
+  "status": "local-validated-pending-deployment",
+  "changes": [
+    "Explicit pencil and paper-relative faded red/blue regional selection in all ink modes",
+    "Preserve other-colored printed borders, dark text edges and manual keep regions",
+    "Reapply existing frames additively without mutating prior history or later restore operations",
+    "No model-weight changes"
+  ],
+  "core": {
+    "passed": 42,
+    "failed": 0
+  },
+  "functional": {
+    "success": true,
+    "checks": [
+      "EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit",
+      "works without cross-origin isolation headers as on GitHub Pages",
+      "home responsive 320",
+      "home responsive 390",
+      "home responsive 768",
+      "home responsive 1440",
+      "demo imports",
+      "fixed synthetic fixture imports for cross-platform image regression",
+      "actual ONNX WASM inference and OpenCV inpainting",
+      "trained workbook mode, 90% threshold, texture repair and pixel-exact saved-session restoration",
+      "coarse black mode switches locally and recommends texture repair",
+      "default AI preview preserves dark printed text on the demonstration",
+      "editor responsive 320",
+      "editor responsive 390",
+      "editor responsive 768",
+      "editor responsive 1440",
+      "semi-auto settings, manual protect, undo and redo",
+      "IndexedDB save",
+      "actual inpainting preserves all manual keep pixels and all pixels outside final mask",
+      "manual correction responds and Restore question recovers accidentally erased printed text exactly",
+      "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
+      "two-finger touch zoom",
+      "reopened export resets confirmation once and preserves immediate user confirmation",
+      "explicit export confirmation and JPG",
+      "JPEG contains the sampled text repair with expected compression tolerance",
+      "valid PDF output",
+      "original bytes remain identical after all editing and exports",
+      "restore saved session including sampled text repair",
+      "model, WASM, image worker and service worker stay within Pages project path",
+      "offline reload and fresh AI inference with cached model and WASM",
+      "AI download failure clearly reported with working manual fallback",
+      "no page errors, HTTP failures, or photo upload requests"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": [],
+    "originalHash": "652c39695ce1ba10a074ea8bbc60658cc01b7dedbfee1176f15a9cdd867887c0"
+  },
+  "regions": {
+    "success": true,
+    "version": "0.6.3",
+    "checks": [
+      "enter semi-auto on unchanged AI-cleaned preview",
+      "next-box threshold and color settings preserve existing result",
+      "two separate supplementary boxes accumulate without restoring earlier AI or local cleaning",
+      "restore box returns original ink only in selected area",
+      "region undo and redo are pixel-exact",
+      "remove one region while retaining the other regions; removal is undoable",
+      "manual step retains accumulated cleaned preview",
+      "original bytes and independently captured region masks saved in IndexedDB",
+      "reload restores all region operations and exact cleaned pixels",
+      "offline reload restores regional edits",
+      "multi-region controls fit 320, 390, 768 and 1440px layouts",
+      "explicit pencil removes low-confidence neutral ink on warm paper without removing nearby red",
+      "reapply adds red candidates to the same frame and preserves its earlier pencil cleanup",
+      "reapply with no new matching candidates keeps existing cleanup",
+      "reapply can be undone and redone without mutating earlier history",
+      "nine successive frames clear faded red including frames 7–9 while preserving the first frame",
+      "explicit blue removes faded blue on warm paper",
+      "reapply keeps later restore-frame operation in control",
+      "faint-ink masks, cumulative reapply and later restoration survive saved-state reload",
+      "five ink targets and reapply buttons fit narrow and desktop screens"
+    ],
+    "saved": {
+      "originalHash": "be7e215f0a1abe488aec2ac3fb1672e4f7b76f1cdca610808326c58b962966fb",
+      "tools": [
+        "region",
+        "region",
+        "restore-region"
+      ],
+      "typedMasks": true,
+      "region": null
+    },
+    "errors": []
+  },
+  "migration": {
+    "verifiedDate": "2026-11-05",
+    "success": true,
+    "version": "0.6.3",
+    "date": "2026-11-05",
+    "kind": "synthetic_draft_migration",
+    "checks": [
+      "v1 and v2 hints rebuilt to v3; existing v3 retained",
+      "original bytes preserved",
+      "past, present, future, manual protection and sampled text snapshots preserved",
+      "new ink mode defaulted for all history entries",
+      "v0.5 draft can reanalyse with workbook model while keeping original and manual edits",
+      "v0.6.0 workbook hints automatically refresh with model revision 2; original, settings and manual edits preserved",
+      "no page errors"
+    ]
+  },
+  "privateReproduction": {
+    "source": "User PDF worksheet, matched to existing private page27",
+    "scope": "Approximate nine rectangles from PDF; cached predictions; global threshold .9 and regional .5. Historical per-frame settings are not known.",
+    "oldRawRedCandidatesPerBox": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "targetedRedCandidatesLastThree": [
+      1040,
+      200,
+      1226
+    ],
+    "additiveSelectedPixels": 6426,
+    "previousSelectionsRemoved": 0,
+    "newSparsePreserveLabelOverlap": 41,
+    "labelReview": "Remaining overlap visually lies around handwritten checks within broad weak preserve-label regions; this is not a clean ground-truth accuracy benchmark. Initial yellow-border error was corrected before release.",
+    "render": {
+      "checks": [
+        {
+          "name": "before",
+          "selected": 21094,
+          "changed": 20822,
+          "outside": 0
+        },
+        {
+          "name": "after",
+          "selected": 27520,
+          "changed": 27115,
+          "outside": 0
+        }
+      ]
+    },
+    "visualReview": "Improved red check in frame 7 and pencil check in frame 3, yellow frame retained; dark dots, guide intersections and out-of-frame ink remain.",
+    "privateFilesPublished": false
+  },
+  "limits": [
+    "Same-color print and grey printed examples may still be selected; use small regions and manual keep/restore",
+    "Overlaps and dark pencil fragments can remain",
+    "No model retraining or generative text reconstruction",
+    "Phone hardware and general accuracy not validated"
+  ]
+}

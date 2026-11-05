@@ -7,6 +7,53 @@ import { applyTextPatches, patchBounds, sampleText, type TextPatch } from '../sr
 import type { Stroke } from '../src/core.ts';
 const image = (w = 20, h = 20) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4).fill(255) });
 
+test('局部鉛筆與淡紅藍筆依紙色補選，低模型分數不阻止指定筆跡', () => {
+  const img=image(180,140),n=180*140,ai={handwriting:new Float32Array(n),print:new Float32Array(n),workbook:{version:1 as const,confidence:new Uint8Array(n),keep:new Uint8Array(n).fill(1),lines:new Uint8Array(n),crossings:new Uint8Array(n)}};
+  for(let i=0;i<n;i++)img.data.set([224,216,199,255],i*4);
+  for(let y=30;y<60;y++)for(let dx=0;dx<2;dx++){
+    img.data.set([195,188,173,255],(y*180+30+dx)*4);
+    img.data.set([215,188,174,255],(y*180+80+dx)*4);
+    img.data.set([190,188,199,255],(y*180+130+dx)*4);
+  }
+  const edit={...initialEdit(),inkType:'workbook' as const,threshold:.5},rect={x:0,y:0,w:1,h:1};
+  assert.equal(composeMask(img,edit,ai).count,0);assert.equal(colorCandidate(215,188,174,'red'),false);
+  for(const [target,x] of [['pencil',30],['red',80],['blue',130]] as const){
+    const selection=selectRegion(img,edit,rect,ai,target),mask=composeMask(img,{...edit,strokes:[selection]},ai).mask;
+    assert.equal(mask[40*180+x],255,target);assert.equal(mask[10*180+10],0,'paper stays unchanged');
+    for(const other of [30,80,130])if(other!==x)assert.equal(mask[40*180+other],0,'only the explicitly selected ink type');
+  }
+});
+
+test('連續九框仍可補選淡紅筆，人工保留與印刷框線優先', () => {
+  const img=image(240,120),n=240*120,ai={handwriting:new Float32Array(n),print:new Float32Array(n),workbook:{version:1 as const,confidence:new Uint8Array(n),keep:new Uint8Array(n).fill(1),lines:new Uint8Array(n),crossings:new Uint8Array(n)}};
+  for(let i=0;i<n;i++)img.data.set([224,216,199,255],i*4);
+  for(let k=0;k<9;k++)for(let y=40;y<60;y++)for(let dx=0;dx<2;dx++)img.data.set([215,188,174,255],(y*240+10+k*25+dx)*4);
+  ai.workbook.lines[50*240+210]=1;
+  const edit={...initialEdit(),inkType:'workbook' as const,threshold:.5},strokes:Stroke[]=[{tool:'protect',radius:.01,points:[{x:185/240,y:50/120}]}];
+  for(let k=0;k<9;k++)strokes.push(selectRegion(img,{...edit,strokes},{x:(5+k*25)/240,y:.3,w:15/240,h:.25},ai,'red'));
+  const mask=composeMask(img,{...edit,strokes},ai).mask;
+  assert.equal(mask[50*240+160],255,'seventh box');assert.equal(mask[50*240+185],0,'manual keep in eighth box');assert.equal(mask[50*240+210],0,'ruling in ninth box');assert.equal(mask[45*240+210],255,'ninth box still accepts other ink');
+});
+
+test('局部鉛筆保護深色題目及暈邊，漸層紙面不整片清除', () => {
+  const img=image(180,140),n=180*140,ai={handwriting:new Float32Array(n),print:new Float32Array(n)};
+  for(let y=0;y<140;y++)for(let x=0;x<180;x++)img.data.set([220+Math.round(x/12),215+Math.round(x/12),200+Math.round(x/12),255],(y*180+x)*4);
+  for(let y=30;y<60;y++)for(let x=29;x<=33;x++)img.data.set(x===29||x===33?[150,146,139,255]:[35,35,35,255],(y*180+x)*4);
+  const edit={...initialEdit(),threshold:.5},s=selectRegion(img,edit,{x:0,y:0,w:1,h:1},ai,'pencil');
+  assert.equal(composeMask(img,{...edit,strokes:[s]},ai).count,0);
+});
+
+test('淡紅筆框選及擴張保留交叉的黃綠印刷邊線與深色字', () => {
+  const img=image(180,140),n=180*140;
+  for(let i=0;i<n;i++)img.data.set([224,216,199,255],i*4);
+  for(let y=50;y<53;y++)for(let x=20;x<150;x++)img.data.set([215,188,174,255],(y*180+x)*4);
+  for(let y=30;y<80;y++)for(const [x,rgb] of [[60,[210,195,130]],[100,[155,175,130]],[130,[35,35,35]]] as const)for(let dx=0;dx<3;dx++)img.data.set([...rgb,255],(y*180+x+dx)*4);
+  const edit={...initialEdit(),threshold:.5},stroke=selectRegion(img,edit,{x:0,y:0,w:1,h:1},null,'red');
+  const mask=composeMask(img,{...edit,strokes:[stroke]}).mask;
+  assert.equal(mask[51*180+30],255,'faded red ink is accepted without AI');
+  for(let y=30;y<80;y++)for(const x of [60,100,130])for(let dx=0;dx<3;dx++)assert.equal(mask[y*180+x+dx],0,'printed colored borders and black text remain protected');
+});
+
 test('多框補清除累加於整頁 AI，低門檻和延伸只作用框內，空框不擦紙面', () => {
   const img=image(),ai={handwriting:new Float32Array(400),print:new Float32Array(400)},edit=initialEdit();
   ai.handwriting[42]=.99;ai.handwriting[147]=.65;ai.handwriting[294]=.65;ai.handwriting[168]=.99;ai.print[168]=.99;

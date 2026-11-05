@@ -116,10 +116,12 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
   if(guideRepair)for(let i=0;i<n;i++)guideRepair[i]=Number(!!mask[i]&&!!learned!.crossings[i]&&manual.erase[i]!==1);
   return { mask, keep: manual.keep, patches: manual.patches, count, protectedCount,guideRepair };
 }
-export function selectRegion(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, rect: Rect, ai?: Parameters<typeof composeMask>[2]): RegionStroke {
+export function selectRegion(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, rect: Rect, ai?: Parameters<typeof composeMask>[2], target: RegionTarget = 'none'): RegionStroke {
   const b=regionBounds(rect,image.width,image.height);
+  const protections=edit.strokes.filter(s=>s.tool==='protect'||s.tool==='unprotect');
+  if(target!=='none')return {tool:'region',rect,imageWidth:image.width,imageHeight:image.height,mask:targetedRegionMask(image,b,target,edit,drawMasks(protections,image.width,image.height).keep,ai)};
   // Capture only this selection's accepted candidates; later settings and selections preserve earlier work.
-  const selected=composeMask(image,{...edit,region:rect,strokes:edit.strokes.filter(s=>s.tool==='protect'||s.tool==='unprotect')},ai).mask;
+  const selected=composeMask(image,{...edit,region:rect,strokes:protections},ai).mask;
   const mask=new Uint8Array(b.w*b.h);
   for(let y=0;y<b.h;y++)mask.set(selected.subarray((b.y+y)*image.width+b.x,(b.y+y)*image.width+b.x+b.w),y*b.w);
   return {tool:'region',rect,imageWidth:image.width,imageHeight:image.height,mask};
@@ -155,3 +157,5 @@ export function sauvola(image: { width: number; height: number; data: Uint8Clamp
 import type { InkHints } from './refine';
 import type { WorkbookHints } from './workbook';
 import { patchBounds, type TextPatch } from './textRepair.ts';
+import { targetedRegionMask, type RegionTarget } from './regionInk.ts';
+export type { RegionTarget } from './regionInk.ts';
