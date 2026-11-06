@@ -1,0 +1,184 @@
+{
+  "date": "2026-11-06",
+  "status": "retraining-completed-candidates-not-released",
+  "productionVersion": "0.6.3",
+  "productionModelRevision": 2,
+  "productionModelSha256": "a260bc3cc2d981be86e345acc052bfe07e6733e400a02780c5b5bff4b62d09da",
+  "trainedModel": "Gradient-boosted component classifier; PHTI FCNN and repair engine unchanged",
+  "totalDistinctCandidates": 16,
+  "experiments": [
+    {
+      "family": "capacity-and-depth",
+      "trainedCandidates": 6,
+      "candidateIds": [
+        "t120-d4-l5-n1",
+        "t180-d3-l5-n1.5",
+        "t180-d3-l5-n1",
+        "t180-d4-l3-n1",
+        "t180-d4-l5-n1.5",
+        "t180-d4-l5-n1"
+      ]
+    },
+    {
+      "family": "colour-separated-components",
+      "trainedCandidates": 4,
+      "candidateIds": [
+        "t120-d4-l5-n1",
+        "t180-d3-l5-n1",
+        "t180-d4-l3-n1",
+        "t180-d4-l5-n1"
+      ]
+    },
+    {
+      "family": "colour-separation-with-parent-context",
+      "trainedCandidates": 3,
+      "candidateIds": [
+        "t120-d3-l5-n1",
+        "t120-d4-l5-n1",
+        "t180-d4-l5-n1.5"
+      ]
+    },
+    {
+      "family": "neighboring-text-context",
+      "trainedCandidates": 3,
+      "candidateIds": [
+        "t120-d3-l5-n1",
+        "t120-d4-l5-n1",
+        "t180-d4-l5-n1.5"
+      ]
+    }
+  ],
+  "data": {
+    "independentSourcePages": 10,
+    "sourcePageSplit": {
+      "train": 7,
+      "validation": 1,
+      "developmentEvaluation": 2
+    },
+    "widthVariants": [
+      900,
+      1108,
+      1500
+    ],
+    "newIndependentPages": 0,
+    "labels": "Existing sparse weak labels from third-party cleaned comparison images plus confirmed printed examples. No new clean originals.",
+    "limitations": "All pages were reviewed in prior development. This is not a blind test or whole-page accuracy benchmark. Colour splitting changes component counts, not source-photo count."
+  },
+  "selectedForFinalEvaluation": {
+    "family": "neighboring-text-context",
+    "candidate": "t120-d3-l5-n1",
+    "features": 33,
+    "trees": 120,
+    "trainingComponents": 7096,
+    "positiveComponents": 320,
+    "threshold": 0.9,
+    "selection": "Validation-only aggregate improvement; unchanged 7-page fitting split. Candidate fixed before final evaluation.",
+    "exportMaxPredictionError": 0.0,
+    "refitMatchesSavedCandidateExactly": true
+  },
+  "aggregatePixelChecks": {
+    "order": [
+      "production-v2",
+      "candidate"
+    ],
+    "metrics": "Counts within sparse labels at all three widths; not independent page counts or accuracy.",
+    "bySplit": {
+      "train": [
+        {
+          "hand": 83321,
+          "selected": 69700,
+          "keep": 1875503,
+          "damaged": 1046,
+          "confirmed": 77671,
+          "confirmedDamaged": 0
+        },
+        {
+          "hand": 83321,
+          "selected": 69933,
+          "keep": 1875503,
+          "damaged": 883,
+          "confirmed": 77671,
+          "confirmedDamaged": 0
+        }
+      ],
+      "validation": [
+        {
+          "hand": 15233,
+          "selected": 14038,
+          "keep": 281021,
+          "damaged": 340,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        {
+          "hand": 15233,
+          "selected": 14089,
+          "keep": 281021,
+          "damaged": 182,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        }
+      ],
+      "test": [
+        {
+          "hand": 16468,
+          "selected": 14006,
+          "keep": 561476,
+          "damaged": 81,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        },
+        {
+          "hand": 16468,
+          "selected": 14292,
+          "keep": 561476,
+          "damaged": 80,
+          "confirmed": 0,
+          "confirmedDamaged": 0
+        }
+      ]
+    }
+  },
+  "releaseDecision": {
+    "accepted": false,
+    "reason": "Aggregate weak-label metrics improved modestly, but the previously reported worksheet regressed at its original resolution. Do not replace the production model with a candidate that increases missed handwriting in this reported case.",
+    "reportedWorksheetOriginalResolution": {
+      "page": "page27",
+      "width": 1108,
+      "height": 1477,
+      "before": {
+        "name": "baseline",
+        "hand": 2497,
+        "selected": 2179,
+        "keep": 71404,
+        "damaged": 0,
+        "confirmed": 0,
+        "confirmedDamaged": 0,
+        "totalSelected": 16747
+      },
+      "candidate": {
+        "name": "t120-d3-l5-n1.json",
+        "hand": 2497,
+        "selected": 2072,
+        "keep": 71404,
+        "damaged": 3,
+        "confirmed": 0,
+        "confirmedDamaged": 0,
+        "totalSelected": 19661
+      }
+    },
+    "confirmedPrintedExamplesSelected": 0,
+    "productionModelsChanged": false,
+    "siteRebuilt": false
+  },
+  "privateArtifacts": {
+    "candidate": "test-results/workbook-v3/context-data/ink-model.json",
+    "trainingReport": "test-results/workbook-v3/context-data/training-report.json",
+    "pixelComparisons": "test-results/workbook-v3/context-all-pixel-report.json"
+  },
+  "neededForNextTrainingRound": [
+    "True unfilled original and answered photo of the same page, especially the reported failing page",
+    "Explicit examples of handwritten regions to remove and printed examples/lines to preserve where a clean original is unavailable"
+  ],
+  "privatePhotosPublished": false
+}
