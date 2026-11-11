@@ -1,0 +1,64 @@
+{
+  "id": "zhuyin-ink-1",
+  "name": "中文注音鉛筆局部辨識模型（實驗）",
+  "version": "2026-11-10-1",
+  "revision": 3,
+  "file": "zhuyin-ink-v1.json",
+  "sha256": "c209807c716feb8b317c3c0677c13f9d808bb8232518458cf7f5559152162ddc",
+  "bytes": 214242,
+  "architecture": "160 histogram gradient boosted trees, max depth 5 / 24 leaves, pixel evidence with surrounding component context",
+  "features": 37,
+  "training": {
+    "source": "16 source pages, grouped 11 train / 2 validation / 3 development evaluation; six genuine blank pairs plus ten old weak pairs",
+    "sourceGroups": {
+      "train": [
+        "page09",
+        "page10",
+        "page13",
+        "page15",
+        "page18",
+        "page21",
+        "page22",
+        "zh38",
+        "zh39",
+        "zh44",
+        "zh46"
+      ],
+      "validation": [
+        "page17",
+        "zh47"
+      ],
+      "test": [
+        "page25",
+        "page27",
+        "zh45"
+      ]
+    },
+    "sampledTrainPixels": 183566,
+    "positiveTrainPixels": 50999,
+    "parameters": {
+      "iterations": 160,
+      "maxDepth": 5,
+      "maxLeafNodes": 24,
+      "minSamplesLeaf": 30,
+      "learningRate": 0.08,
+      "l2": 1,
+      "seed": 20261109,
+      "pageClassBalancing": true,
+      "hardNegativeMining": "up to 1600 additional retained-print pixels per training variant from components touching handwriting, weight 4"
+    },
+    "featureDataSha256": "b7bacea715998cdcd897ee91f77492991040f06ee1dcf47a5c48e9df9079b7f6"
+  },
+  "recommendedThreshold": 0.96,
+  "runsLocally": true,
+  "containsImages": false,
+  "limitations": [
+    "Six Chinese/Zhuyin source pages from one workbook; no general accuracy claim",
+    "Ten earlier English pairs use imperfect third-party-cleaned weak references",
+    "Sparse registered labels exclude ambiguity; source page variants remain grouped",
+    "Development evaluation pages have been inspected; no blind test claim",
+    "English workbook mode retains revision 2; this model is an optional Chinese/Zhuyin experiment",
+    "Overlapping print, circles, dotted grids and faint strokes still need manual review",
+    "PHTI FCNN unchanged; repair uses local inpainting, not trained character generation"
+  ]
+}

@@ -4,7 +4,7 @@ export type Tool = 'erase' | 'restore' | 'protect' | 'unprotect' | 'region' | 'r
 export type BrushStroke = { tool: Exclude<Tool, 'region' | 'restore-region' | 'pan' | 'sample' | 'text'>; radius: number; points: Point[] };
 export type RegionStroke = { tool: 'region'; rect: Rect; imageWidth: number; imageHeight: number; mask: Uint8Array } | { tool: 'restore-region'; rect: Rect };
 export type Stroke = BrushStroke | TextPatch | RegionStroke;
-export type Edit = { threshold: number; inkType: 'auto'|'black'|'workbook'; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
+export type Edit = { threshold: number; inkType: 'auto'|'black'|'workbook'|'zhuyin'; color: 'none' | 'red' | 'blue' | 'both'; protectPrint: boolean; allowNeutralInk: boolean; autoAnswers: boolean; repair: 'paper'|'texture'; grow: boolean; region: Rect | null; strokes: Stroke[] };
 export const initialEdit = (): Edit => ({ threshold: 0.8, inkType: 'auto', color: 'none', protectPrint: true, allowNeutralInk: false, autoAnswers: true, repair: 'paper', grow: true, region: null, strokes: [] });
 export type History = { past: Edit[]; present: Edit; future: Edit[] };
 export function changeHistory(h: History, next: Edit | 'undo' | 'redo'): History {
@@ -73,10 +73,10 @@ export function colorCandidate(r: number, g: number, b: number, mode: Edit['colo
   const blue = b > r * 1.15 + 12 && b > g * 1.08 + 8 && Math.min(r, g) < 210;
   return mode === 'red' ? red : mode === 'blue' ? blue : mode === 'both' && (red || blue);
 }
-export function composeMask(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, ai?: { handwriting: Float32Array; print: Float32Array; hints?: InkHints; workbook?:WorkbookHints } | null) {
+export function composeMask(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, ai?: { handwriting: Float32Array; print: Float32Array; hints?: InkHints; workbook?:WorkbookHints;workbooks?:Record<number,WorkbookHints> } | null) {
   const { width: w, height: h, data } = image, n = w * h;
   if (ai && (ai.handwriting.length !== n || ai.print.length !== n)) throw new Error('AI 遮罩尺寸與底圖不符，請重新分析。');
-  const workbook=edit.inkType==='workbook',learned=workbook?ai?.workbook:undefined;
+  const workbook=isWorkbookMode(edit.inkType),learned=workbookHints(ai,edit.inkType);
   if(learned&&(learned.version!==1||learned.confidence.length!==n||learned.keep.length!==n||learned.lines.length!==n||learned.crossings.length!==n))throw new Error('課本遮罩尺寸與底圖不符，請重新分析。');
   const manual = drawMasks(edit.strokes, w, h), candidate = new Uint8Array(n), mask = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
@@ -155,7 +155,7 @@ export function sauvola(image: { width: number; height: number; data: Uint8Clamp
   return out;
 }
 import type { InkHints } from './refine';
-import type { WorkbookHints } from './workbook';
+import {isWorkbookMode,workbookHints,type WorkbookHints} from './workbook.ts';
 import { patchBounds, type TextPatch } from './textRepair.ts';
 import { targetedRegionMask, type RegionTarget } from './regionInk.ts';
 export type { RegionTarget } from './regionInk.ts';

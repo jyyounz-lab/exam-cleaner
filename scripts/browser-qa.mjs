@@ -57,6 +57,37 @@ try {
   await page.waitForFunction(()=>![...document.querySelectorAll('button')].find(b=>b.textContent==='確認匯出')?.disabled,null,{timeout:90000});
   assert.equal(await page.locator('#ink-type').inputValue(),'workbook');assert.ok(await page.evaluate(()=>document.querySelector('.paper-stage canvas').toDataURL())===workbookPreview,'restored workbook pixels must match');
   checks.push('trained workbook mode, 90% threshold, texture repair and pixel-exact saved-session restoration');
+  await page.locator('#ink-type').selectOption('zhuyin');
+  await page.getByText('AI 清除與修復完成',{exact:true}).waitFor({timeout:180000});
+  assert.equal(await page.locator('#threshold').inputValue(),'0.96');
+  await page.waitForFunction(()=>![...document.querySelectorAll('button')].find(b=>b.textContent==='確認匯出')?.disabled,null,{timeout:90000});
+  const zhuyinPreview=await page.evaluate(()=>document.querySelector('.paper-stage canvas').toDataURL());
+  await page.getByRole('button',{name:'儲存進度',exact:true}).click();await page.getByText(/編輯進度已儲存在此瀏覽器/).waitFor();
+  const zhuyinSaved=await page.evaluate(async()=>{
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+    const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();
+    return {revision:d.ai.workbook.modelRevision,mode:d.history.present.inkType,hash:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await d.original.arrayBuffer()))).map(v=>v.toString(16).padStart(2,'0')).join('')};
+  });
+  assert.deepEqual(zhuyinSaved,{revision:3,mode:'zhuyin',hash:originalHash});
+  checks.push('Chinese/Zhuyin pixel model runs in WASM pipeline at 96%, revision 3 and original bytes persist');
+  await context.setOffline(true);await page.reload();await page.getByRole('button',{name:/繼續編輯/}).click();
+  await page.getByText('AI 清除與修復完成',{exact:true}).waitFor({timeout:90000});
+  assert.equal(await page.locator('#ink-type').inputValue(),'zhuyin');
+  await page.waitForFunction(()=>![...document.querySelectorAll('button')].find(b=>b.textContent==='確認匯出')?.disabled,null,{timeout:90000});
+  assert.equal(await page.evaluate(()=>document.querySelector('.paper-stage canvas').toDataURL()),zhuyinPreview);
+  checks.push('Chinese/Zhuyin saved result restores pixel-exactly offline');
+  await context.setOffline(false);await page.locator('#ink-type').selectOption('workbook');
+  await page.getByText('AI 清除與修復完成',{exact:true}).waitFor({timeout:180000});
+  await page.waitForFunction(()=>![...document.querySelectorAll('button')].find(b=>b.textContent==='確認匯出')?.disabled,null,{timeout:90000});
+  assert.equal(await page.evaluate(()=>document.querySelector('.paper-stage canvas').toDataURL()),workbookPreview);
+  checks.push('switching back restores the unchanged English model output');
+  for(const [action,mode,expected] of [['復原','zhuyin',zhuyinPreview],['重做','workbook',workbookPreview]]) {
+    await page.getByRole('button',{name:action,exact:true}).click();
+    assert.equal(await page.locator('#ink-type').inputValue(),mode);
+    await page.waitForFunction(()=>![...document.querySelectorAll('button')].find(b=>b.textContent==='確認匯出')?.disabled,null,{timeout:90000});
+    assert.equal(await page.evaluate(()=>document.querySelector('.paper-stage canvas').toDataURL()),expected);
+  }
+  checks.push('undo and redo across model switches retain both pixel-exact results after saved-session reload');
   await page.locator('#ink-type').selectOption('black');
   assert.equal(await page.locator('#repair').inputValue(), 'texture');
   await page.locator('#ink-type').selectOption('auto'); await page.locator('#repair').selectOption('paper');

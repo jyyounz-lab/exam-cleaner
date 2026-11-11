@@ -1,0 +1,1683 @@
+{
+  "date": "2026-11-11",
+  "version": "0.7.0",
+  "status": "local-validation",
+  "changes": [
+    "Separate optional Chinese/Zhuyin pixel classifier at 96% with texture repair",
+    "Cache each model result across mode switches, undo/redo and saved sessions",
+    "English model revision 2 and PHTI FCNN weights unchanged; no generative repair training"
+  ],
+  "core": {
+    "passed": 44,
+    "failed": 0
+  },
+  "build": {
+    "typescript": true,
+    "pagesBase": "/exam-cleaner/",
+    "cachedFiles": 23,
+    "allThreeHashesVerified": true
+  },
+  "functional": {
+    "success": true,
+    "checks": [
+      "EXIF phone photos retain small native dimensions, rotate correctly and respect the 2000px working limit",
+      "works without cross-origin isolation headers as on GitHub Pages",
+      "home responsive 320",
+      "home responsive 390",
+      "home responsive 768",
+      "home responsive 1440",
+      "demo imports",
+      "fixed synthetic fixture imports for cross-platform image regression",
+      "actual ONNX WASM inference and OpenCV inpainting",
+      "trained workbook mode, 90% threshold, texture repair and pixel-exact saved-session restoration",
+      "Chinese/Zhuyin pixel model runs in WASM pipeline at 96%, revision 3 and original bytes persist",
+      "Chinese/Zhuyin saved result restores pixel-exactly offline",
+      "switching back restores the unchanged English model output",
+      "undo and redo across model switches retain both pixel-exact results after saved-session reload",
+      "coarse black mode switches locally and recommends texture repair",
+      "default AI preview preserves dark printed text on the demonstration",
+      "editor responsive 320",
+      "editor responsive 390",
+      "editor responsive 768",
+      "editor responsive 1440",
+      "semi-auto settings, manual protect, undo and redo",
+      "IndexedDB save",
+      "actual inpainting preserves all manual keep pixels and all pixels outside final mask",
+      "manual correction responds and Restore question recovers accidentally erased printed text exactly",
+      "same-letter sampling, target placement, paper matching and pixel-exact undo/redo",
+      "two-finger touch zoom",
+      "reopened export resets confirmation once and preserves immediate user confirmation",
+      "explicit export confirmation and JPG",
+      "JPEG contains the sampled text repair with expected compression tolerance",
+      "valid PDF output",
+      "original bytes remain identical after all editing and exports",
+      "restore saved session including sampled text repair",
+      "model, WASM, image worker and service worker stay within Pages project path",
+      "offline reload and fresh AI inference with cached model and WASM",
+      "AI download failure clearly reported with working manual fallback",
+      "no page errors, HTTP failures, or photo upload requests"
+    ],
+    "errors": [],
+    "sent": [],
+    "failed": [],
+    "originalHash": "652c39695ce1ba10a074ea8bbc60658cc01b7dedbfee1176f15a9cdd867887c0"
+  },
+  "regions": {
+    "success": true,
+    "version": "0.7.0",
+    "checks": [
+      "enter semi-auto on unchanged AI-cleaned preview",
+      "next-box threshold and color settings preserve existing result",
+      "two separate supplementary boxes accumulate without restoring earlier AI or local cleaning",
+      "restore box returns original ink only in selected area",
+      "region undo and redo are pixel-exact",
+      "remove one region while retaining the other regions; removal is undoable",
+      "manual step retains accumulated cleaned preview",
+      "original bytes and independently captured region masks saved in IndexedDB",
+      "reload restores all region operations and exact cleaned pixels",
+      "offline reload restores regional edits",
+      "multi-region controls fit 320, 390, 768 and 1440px layouts",
+      "explicit pencil removes low-confidence neutral ink on warm paper without removing nearby red",
+      "reapply adds red candidates to the same frame and preserves its earlier pencil cleanup",
+      "reapply with no new matching candidates keeps existing cleanup",
+      "reapply can be undone and redone without mutating earlier history",
+      "nine successive frames clear faded red including frames 7–9 while preserving the first frame",
+      "explicit blue removes faded blue on warm paper",
+      "reapply keeps later restore-frame operation in control",
+      "faint-ink masks, cumulative reapply and later restoration survive saved-state reload",
+      "five ink targets and reapply buttons fit narrow and desktop screens"
+    ],
+    "saved": {
+      "originalHash": "be7e215f0a1abe488aec2ac3fb1672e4f7b76f1cdca610808326c58b962966fb",
+      "tools": [
+        "region",
+        "region",
+        "restore-region"
+      ],
+      "typedMasks": true,
+      "region": null
+    },
+    "errors": []
+  },
+  "migration": {
+    "success": true,
+    "version": "0.7.0",
+    "date": "2026-11-03",
+    "kind": "synthetic_draft_migration",
+    "checks": [
+      "v1 and v2 hints rebuilt to v3; existing v3 retained",
+      "original bytes preserved",
+      "past, present, future, manual protection and sampled text snapshots preserved",
+      "new ink mode defaulted for all history entries",
+      "v0.5 draft can reanalyse with workbook model while keeping original and manual edits",
+      "v0.6.0 workbook hints automatically refresh with model revision 2; original, settings and manual edits preserved",
+      "no page errors"
+    ]
+  },
+  "model": {
+    "id": "zhuyin-ink-1",
+    "name": "中文注音鉛筆局部辨識模型（實驗）",
+    "version": "2026-11-10-1",
+    "revision": 3,
+    "file": "zhuyin-ink-v1.json",
+    "sha256": "c209807c716feb8b317c3c0677c13f9d808bb8232518458cf7f5559152162ddc",
+    "bytes": 214242,
+    "architecture": "160 histogram gradient boosted trees, max depth 5 / 24 leaves, pixel evidence with surrounding component context",
+    "features": 37,
+    "training": {
+      "source": "16 source pages, grouped 11 train / 2 validation / 3 development evaluation; six genuine blank pairs plus ten old weak pairs",
+      "sourceGroups": {
+        "train": [
+          "page09",
+          "page10",
+          "page13",
+          "page15",
+          "page18",
+          "page21",
+          "page22",
+          "zh38",
+          "zh39",
+          "zh44",
+          "zh46"
+        ],
+        "validation": [
+          "page17",
+          "zh47"
+        ],
+        "test": [
+          "page25",
+          "page27",
+          "zh45"
+        ]
+      },
+      "sampledTrainPixels": 183566,
+      "positiveTrainPixels": 50999,
+      "parameters": {
+        "iterations": 160,
+        "maxDepth": 5,
+        "maxLeafNodes": 24,
+        "minSamplesLeaf": 30,
+        "learningRate": 0.08,
+        "l2": 1,
+        "seed": 20261109,
+        "pageClassBalancing": true,
+        "hardNegativeMining": "up to 1600 additional retained-print pixels per training variant from components touching handwriting, weight 4"
+      },
+      "featureDataSha256": "b7bacea715998cdcd897ee91f77492991040f06ee1dcf47a5c48e9df9079b7f6"
+    },
+    "recommendedThreshold": 0.96,
+    "runsLocally": true,
+    "containsImages": false,
+    "limitations": [
+      "Six Chinese/Zhuyin source pages from one workbook; no general accuracy claim",
+      "Ten earlier English pairs use imperfect third-party-cleaned weak references",
+      "Sparse registered labels exclude ambiguity; source page variants remain grouped",
+      "Development evaluation pages have been inspected; no blind test claim",
+      "English workbook mode retains revision 2; this model is an optional Chinese/Zhuyin experiment",
+      "Overlapping print, circles, dotted grids and faint strokes still need manual review",
+      "PHTI FCNN unchanged; repair uses local inpainting, not trained character generation"
+    ]
+  },
+  "trainingReview": {
+    "candidates": [
+      "27-feature component 120 depth3",
+      "27-feature component 160 depth4",
+      "page-balanced component 160 depth4",
+      "brightness split with parent context 35 features",
+      "pixel classifier 37 features",
+      "pixel classifier with train-only touching-print negatives (selected)"
+    ],
+    "additionalHardNegatives": 24567,
+    "exportMaxError": 0,
+    "publicScriptsReproducedFeatureHashAndAllTreeParameters": true,
+    "splitUnit": "source page; answered, blank and size variants grouped",
+    "blindTest": false
+  },
+  "offlineQuality": {
+    "kind": "sparse labeled final masks; not whole-page accuracy",
+    "oldThreshold": 0.9,
+    "newThreshold": 0.96,
+    "totalCases": 66,
+    "englishByteIdenticalCases": 30,
+    "answeredVariants": 18,
+    "handSelectionImproved": 17,
+    "retainedInkSelectionReduced": 18,
+    "blankVariants": 18,
+    "allChineseRetainedInkSelectionBelowHalfPercent": true,
+    "regressions": [
+      {
+        "id": "zh45-w1500",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 25450,
+          "selected": 4542,
+          "keep": 156779,
+          "damaged": 590
+        },
+        "after": {
+          "hand": 25450,
+          "selected": 4016,
+          "keep": 156779,
+          "damaged": 111
+        },
+        "mode": "zhuyin"
+      }
+    ],
+    "cases": [
+      {
+        "id": "page09-w1108",
+        "sourcePage": "page09",
+        "split": "train",
+        "before": {
+          "hand": 5987,
+          "selected": 5899,
+          "keep": 86135,
+          "damaged": 11
+        },
+        "after": {
+          "hand": 5987,
+          "selected": 5899,
+          "keep": 86135,
+          "damaged": 11
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page09-w900",
+        "sourcePage": "page09",
+        "split": "train",
+        "before": {
+          "hand": 3992,
+          "selected": 3914,
+          "keep": 56685,
+          "damaged": 139
+        },
+        "after": {
+          "hand": 3992,
+          "selected": 3914,
+          "keep": 56685,
+          "damaged": 139
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page09-w1500",
+        "sourcePage": "page09",
+        "split": "train",
+        "before": {
+          "hand": 10928,
+          "selected": 10749,
+          "keep": 157847,
+          "damaged": 20
+        },
+        "after": {
+          "hand": 10928,
+          "selected": 10749,
+          "keep": 157847,
+          "damaged": 20
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page10-w1108",
+        "sourcePage": "page10",
+        "split": "train",
+        "before": {
+          "hand": 5561,
+          "selected": 3956,
+          "keep": 55117,
+          "damaged": 0
+        },
+        "after": {
+          "hand": 5561,
+          "selected": 3956,
+          "keep": 55117,
+          "damaged": 0
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page10-w900",
+        "sourcePage": "page10",
+        "split": "train",
+        "before": {
+          "hand": 3733,
+          "selected": 2626,
+          "keep": 36547,
+          "damaged": 36
+        },
+        "after": {
+          "hand": 3733,
+          "selected": 2626,
+          "keep": 36547,
+          "damaged": 36
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page10-w1500",
+        "sourcePage": "page10",
+        "split": "train",
+        "before": {
+          "hand": 10211,
+          "selected": 6953,
+          "keep": 100808,
+          "damaged": 93
+        },
+        "after": {
+          "hand": 10211,
+          "selected": 6953,
+          "keep": 100808,
+          "damaged": 93
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page13-w1108",
+        "sourcePage": "page13",
+        "split": "train",
+        "before": {
+          "hand": 3810,
+          "selected": 3324,
+          "keep": 78438,
+          "damaged": 90
+        },
+        "after": {
+          "hand": 3810,
+          "selected": 3324,
+          "keep": 78438,
+          "damaged": 90
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page13-w900",
+        "sourcePage": "page13",
+        "split": "train",
+        "before": {
+          "hand": 2532,
+          "selected": 2289,
+          "keep": 51647,
+          "damaged": 47
+        },
+        "after": {
+          "hand": 2532,
+          "selected": 2289,
+          "keep": 51647,
+          "damaged": 47
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page13-w1500",
+        "sourcePage": "page13",
+        "split": "train",
+        "before": {
+          "hand": 6939,
+          "selected": 6082,
+          "keep": 143687,
+          "damaged": 133
+        },
+        "after": {
+          "hand": 6939,
+          "selected": 6082,
+          "keep": 143687,
+          "damaged": 133
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page15-w1108",
+        "sourcePage": "page15",
+        "split": "train",
+        "before": {
+          "hand": 2230,
+          "selected": 1681,
+          "keep": 93427,
+          "damaged": 78
+        },
+        "after": {
+          "hand": 2230,
+          "selected": 1681,
+          "keep": 93427,
+          "damaged": 78
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page15-w900",
+        "sourcePage": "page15",
+        "split": "train",
+        "before": {
+          "hand": 1461,
+          "selected": 1291,
+          "keep": 61725,
+          "damaged": 122
+        },
+        "after": {
+          "hand": 1461,
+          "selected": 1291,
+          "keep": 61725,
+          "damaged": 122
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page15-w1500",
+        "sourcePage": "page15",
+        "split": "train",
+        "before": {
+          "hand": 4084,
+          "selected": 3095,
+          "keep": 171469,
+          "damaged": 95
+        },
+        "after": {
+          "hand": 4084,
+          "selected": 3095,
+          "keep": 171469,
+          "damaged": 95
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page17-w1108",
+        "sourcePage": "page17",
+        "split": "validation",
+        "before": {
+          "hand": 4379,
+          "selected": 4060,
+          "keep": 80461,
+          "damaged": 21
+        },
+        "after": {
+          "hand": 4379,
+          "selected": 4060,
+          "keep": 80461,
+          "damaged": 21
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page17-w900",
+        "sourcePage": "page17",
+        "split": "validation",
+        "before": {
+          "hand": 2905,
+          "selected": 2761,
+          "keep": 53124,
+          "damaged": 225
+        },
+        "after": {
+          "hand": 2905,
+          "selected": 2761,
+          "keep": 53124,
+          "damaged": 225
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page17-w1500",
+        "sourcePage": "page17",
+        "split": "validation",
+        "before": {
+          "hand": 7949,
+          "selected": 7217,
+          "keep": 147436,
+          "damaged": 94
+        },
+        "after": {
+          "hand": 7949,
+          "selected": 7217,
+          "keep": 147436,
+          "damaged": 94
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page18-w1108",
+        "sourcePage": "page18",
+        "split": "train",
+        "before": {
+          "hand": 3165,
+          "selected": 2918,
+          "keep": 50128,
+          "damaged": 0
+        },
+        "after": {
+          "hand": 3165,
+          "selected": 2918,
+          "keep": 50128,
+          "damaged": 0
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page18-w900",
+        "sourcePage": "page18",
+        "split": "train",
+        "before": {
+          "hand": 2094,
+          "selected": 1904,
+          "keep": 33053,
+          "damaged": 17
+        },
+        "after": {
+          "hand": 2094,
+          "selected": 1904,
+          "keep": 33053,
+          "damaged": 17
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page18-w1500",
+        "sourcePage": "page18",
+        "split": "train",
+        "before": {
+          "hand": 5797,
+          "selected": 4715,
+          "keep": 91883,
+          "damaged": 29
+        },
+        "after": {
+          "hand": 5797,
+          "selected": 4715,
+          "keep": 91883,
+          "damaged": 29
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page21-w1108",
+        "sourcePage": "page21",
+        "split": "train",
+        "before": {
+          "hand": 1817,
+          "selected": 1750,
+          "keep": 75133,
+          "damaged": 20
+        },
+        "after": {
+          "hand": 1817,
+          "selected": 1750,
+          "keep": 75133,
+          "damaged": 20
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page21-w900",
+        "sourcePage": "page21",
+        "split": "train",
+        "before": {
+          "hand": 1181,
+          "selected": 1137,
+          "keep": 49631,
+          "damaged": 12
+        },
+        "after": {
+          "hand": 1181,
+          "selected": 1137,
+          "keep": 49631,
+          "damaged": 12
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page21-w1500",
+        "sourcePage": "page21",
+        "split": "train",
+        "before": {
+          "hand": 3313,
+          "selected": 3117,
+          "keep": 137321,
+          "damaged": 41
+        },
+        "after": {
+          "hand": 3313,
+          "selected": 3117,
+          "keep": 137321,
+          "damaged": 41
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page22-w1108",
+        "sourcePage": "page22",
+        "split": "train",
+        "before": {
+          "hand": 1263,
+          "selected": 657,
+          "keep": 98685,
+          "damaged": 11
+        },
+        "after": {
+          "hand": 1263,
+          "selected": 657,
+          "keep": 98685,
+          "damaged": 11
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page22-w900",
+        "sourcePage": "page22",
+        "split": "train",
+        "before": {
+          "hand": 845,
+          "selected": 352,
+          "keep": 65219,
+          "damaged": 21
+        },
+        "after": {
+          "hand": 845,
+          "selected": 352,
+          "keep": 65219,
+          "damaged": 21
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page22-w1500",
+        "sourcePage": "page22",
+        "split": "train",
+        "before": {
+          "hand": 2378,
+          "selected": 1291,
+          "keep": 180918,
+          "damaged": 31
+        },
+        "after": {
+          "hand": 2378,
+          "selected": 1291,
+          "keep": 180918,
+          "damaged": 31
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page25-w1108",
+        "sourcePage": "page25",
+        "split": "test",
+        "before": {
+          "hand": 2237,
+          "selected": 2182,
+          "keep": 89396,
+          "damaged": 10
+        },
+        "after": {
+          "hand": 2237,
+          "selected": 2182,
+          "keep": 89396,
+          "damaged": 10
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page25-w900",
+        "sourcePage": "page25",
+        "split": "test",
+        "before": {
+          "hand": 1469,
+          "selected": 1406,
+          "keep": 58893,
+          "damaged": 6
+        },
+        "after": {
+          "hand": 1469,
+          "selected": 1406,
+          "keep": 58893,
+          "damaged": 6
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page25-w1500",
+        "sourcePage": "page25",
+        "split": "test",
+        "before": {
+          "hand": 4092,
+          "selected": 4005,
+          "keep": 163611,
+          "damaged": 21
+        },
+        "after": {
+          "hand": 4092,
+          "selected": 4005,
+          "keep": 163611,
+          "damaged": 21
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page27-w1108",
+        "sourcePage": "page27",
+        "split": "test",
+        "before": {
+          "hand": 2497,
+          "selected": 2179,
+          "keep": 71404,
+          "damaged": 0
+        },
+        "after": {
+          "hand": 2497,
+          "selected": 2179,
+          "keep": 71404,
+          "damaged": 0
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page27-w900",
+        "sourcePage": "page27",
+        "split": "test",
+        "before": {
+          "hand": 1634,
+          "selected": 1359,
+          "keep": 47213,
+          "damaged": 39
+        },
+        "after": {
+          "hand": 1634,
+          "selected": 1359,
+          "keep": 47213,
+          "damaged": 39
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "page27-w1500",
+        "sourcePage": "page27",
+        "split": "test",
+        "before": {
+          "hand": 4539,
+          "selected": 2875,
+          "keep": 130959,
+          "damaged": 5
+        },
+        "after": {
+          "hand": 4539,
+          "selected": 2875,
+          "keep": 130959,
+          "damaged": 5
+        },
+        "mode": "workbook"
+      },
+      {
+        "id": "zh38-w1108",
+        "sourcePage": "zh38",
+        "split": "train",
+        "before": {
+          "hand": 3788,
+          "selected": 2260,
+          "keep": 118181,
+          "damaged": 2730
+        },
+        "after": {
+          "hand": 3788,
+          "selected": 3026,
+          "keep": 118181,
+          "damaged": 307
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh38-w900",
+        "sourcePage": "zh38",
+        "split": "train",
+        "before": {
+          "hand": 2514,
+          "selected": 1635,
+          "keep": 78007,
+          "damaged": 1556
+        },
+        "after": {
+          "hand": 2514,
+          "selected": 1888,
+          "keep": 78007,
+          "damaged": 46
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh38-w1500",
+        "sourcePage": "zh38",
+        "split": "train",
+        "before": {
+          "hand": 6968,
+          "selected": 3371,
+          "keep": 215989,
+          "damaged": 3399
+        },
+        "after": {
+          "hand": 6968,
+          "selected": 5507,
+          "keep": 215989,
+          "damaged": 433
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh39-w1108",
+        "sourcePage": "zh39",
+        "split": "train",
+        "before": {
+          "hand": 6930,
+          "selected": 2350,
+          "keep": 90183,
+          "damaged": 1415
+        },
+        "after": {
+          "hand": 6930,
+          "selected": 4649,
+          "keep": 90183,
+          "damaged": 62
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh39-w900",
+        "sourcePage": "zh39",
+        "split": "train",
+        "before": {
+          "hand": 4571,
+          "selected": 2196,
+          "keep": 59401,
+          "damaged": 1060
+        },
+        "after": {
+          "hand": 4571,
+          "selected": 3160,
+          "keep": 59401,
+          "damaged": 52
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh39-w1500",
+        "sourcePage": "zh39",
+        "split": "train",
+        "before": {
+          "hand": 12685,
+          "selected": 5627,
+          "keep": 164919,
+          "damaged": 2387
+        },
+        "after": {
+          "hand": 12685,
+          "selected": 9029,
+          "keep": 164919,
+          "damaged": 75
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh44-w1108",
+        "sourcePage": "zh44",
+        "split": "train",
+        "before": {
+          "hand": 8931,
+          "selected": 2410,
+          "keep": 100690,
+          "damaged": 6532
+        },
+        "after": {
+          "hand": 8931,
+          "selected": 5598,
+          "keep": 100690,
+          "damaged": 163
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh44-w900",
+        "sourcePage": "zh44",
+        "split": "train",
+        "before": {
+          "hand": 5893,
+          "selected": 2071,
+          "keep": 66549,
+          "damaged": 4775
+        },
+        "after": {
+          "hand": 5893,
+          "selected": 3704,
+          "keep": 66549,
+          "damaged": 100
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh44-w1500",
+        "sourcePage": "zh44",
+        "split": "train",
+        "before": {
+          "hand": 16320,
+          "selected": 3083,
+          "keep": 184686,
+          "damaged": 7268
+        },
+        "after": {
+          "hand": 16320,
+          "selected": 10449,
+          "keep": 184686,
+          "damaged": 362
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh45-w1108",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 13892,
+          "selected": 3151,
+          "keep": 85478,
+          "damaged": 580
+        },
+        "after": {
+          "hand": 13892,
+          "selected": 3754,
+          "keep": 85478,
+          "damaged": 21
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh45-w900",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 9104,
+          "selected": 2080,
+          "keep": 56677,
+          "damaged": 444
+        },
+        "after": {
+          "hand": 9104,
+          "selected": 2516,
+          "keep": 56677,
+          "damaged": 102
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh45-w1500",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 25450,
+          "selected": 4542,
+          "keep": 156779,
+          "damaged": 590
+        },
+        "after": {
+          "hand": 25450,
+          "selected": 4016,
+          "keep": 156779,
+          "damaged": 111
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh46-w1108",
+        "sourcePage": "zh46",
+        "split": "train",
+        "before": {
+          "hand": 6577,
+          "selected": 459,
+          "keep": 101360,
+          "damaged": 242
+        },
+        "after": {
+          "hand": 6577,
+          "selected": 5225,
+          "keep": 101360,
+          "damaged": 164
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh46-w900",
+        "sourcePage": "zh46",
+        "split": "train",
+        "before": {
+          "hand": 4312,
+          "selected": 221,
+          "keep": 66828,
+          "damaged": 321
+        },
+        "after": {
+          "hand": 4312,
+          "selected": 3479,
+          "keep": 66828,
+          "damaged": 126
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh46-w1500",
+        "sourcePage": "zh46",
+        "split": "train",
+        "before": {
+          "hand": 12054,
+          "selected": 1148,
+          "keep": 185986,
+          "damaged": 516
+        },
+        "after": {
+          "hand": 12054,
+          "selected": 9617,
+          "keep": 185986,
+          "damaged": 373
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh47-w1108",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "before": {
+          "hand": 9844,
+          "selected": 2974,
+          "keep": 89901,
+          "damaged": 211
+        },
+        "after": {
+          "hand": 9844,
+          "selected": 4883,
+          "keep": 89901,
+          "damaged": 130
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh47-w900",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "before": {
+          "hand": 6424,
+          "selected": 2652,
+          "keep": 58808,
+          "damaged": 154
+        },
+        "after": {
+          "hand": 6424,
+          "selected": 3312,
+          "keep": 58808,
+          "damaged": 93
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh47-w1500",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "before": {
+          "hand": 17898,
+          "selected": 3350,
+          "keep": 165145,
+          "damaged": 388
+        },
+        "after": {
+          "hand": 17898,
+          "selected": 8377,
+          "keep": 165145,
+          "damaged": 261
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh38-blank-w1108",
+        "sourcePage": "zh38",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 376971,
+          "damaged": 3697
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 376971,
+          "damaged": 151
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh38-blank-w900",
+        "sourcePage": "zh38",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 248985,
+          "damaged": 2868
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 248985,
+          "damaged": 19
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh38-blank-w1500",
+        "sourcePage": "zh38",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 691182,
+          "damaged": 4184
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 691182,
+          "damaged": 235
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh39-blank-w1058",
+        "sourcePage": "zh39",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 256233,
+          "damaged": 10179
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 256233,
+          "damaged": 291
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh39-blank-w900",
+        "sourcePage": "zh39",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 185009,
+          "damaged": 8978
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 185009,
+          "damaged": 214
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh39-blank-w1500",
+        "sourcePage": "zh39",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 515475,
+          "damaged": 6826
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 515475,
+          "damaged": 565
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh44-blank-w1059",
+        "sourcePage": "zh44",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 402528,
+          "damaged": 8765
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 402528,
+          "damaged": 84
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh44-blank-w900",
+        "sourcePage": "zh44",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 290978,
+          "damaged": 8343
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 290978,
+          "damaged": 79
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh44-blank-w1500",
+        "sourcePage": "zh44",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 808603,
+          "damaged": 14291
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 808603,
+          "damaged": 174
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh45-blank-w1079",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 325389,
+          "damaged": 19235
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 325389,
+          "damaged": 44
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh45-blank-w900",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 225817,
+          "damaged": 19318
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 225817,
+          "damaged": 91
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh45-blank-w1500",
+        "sourcePage": "zh45",
+        "split": "test",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 628539,
+          "damaged": 7106
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 628539,
+          "damaged": 30
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh46-blank-w1009",
+        "sourcePage": "zh46",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 411802,
+          "damaged": 5665
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 411802,
+          "damaged": 0
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh46-blank-w900",
+        "sourcePage": "zh46",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 327389,
+          "damaged": 4628
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 327389,
+          "damaged": 22
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh46-blank-w1500",
+        "sourcePage": "zh46",
+        "split": "train",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 909305,
+          "damaged": 2084
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 909305,
+          "damaged": 0
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh47-blank-w1108",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 300079,
+          "damaged": 9540
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 300079,
+          "damaged": 0
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh47-blank-w900",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 197826,
+          "damaged": 8287
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 197826,
+          "damaged": 59
+        },
+        "mode": "zhuyin"
+      },
+      {
+        "id": "zh47-blank-w1500",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 550705,
+          "damaged": 6441
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 550705,
+          "damaged": 33
+        },
+        "mode": "zhuyin"
+      }
+    ]
+  },
+  "realBrowser": {
+    "success": true,
+    "kind": "development regression on sparse registered labels; not blind or whole-page accuracy",
+    "cases": [
+      {
+        "id": "zh38-w1108",
+        "sourcePage": "zh38",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 49344.310000002384,
+        "before": {
+          "hand": 3788,
+          "selected": 2260,
+          "keep": 118181,
+          "damaged": 2730
+        },
+        "after": {
+          "hand": 3788,
+          "selected": 3026,
+          "keep": 118181,
+          "damaged": 307
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh39-w1108",
+        "sourcePage": "zh39",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 47416.125,
+        "before": {
+          "hand": 6930,
+          "selected": 2350,
+          "keep": 90183,
+          "damaged": 1415
+        },
+        "after": {
+          "hand": 6930,
+          "selected": 4649,
+          "keep": 90183,
+          "damaged": 62
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh44-w1108",
+        "sourcePage": "zh44",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 76950.79499998689,
+        "before": {
+          "hand": 8931,
+          "selected": 2410,
+          "keep": 100690,
+          "damaged": 6532
+        },
+        "after": {
+          "hand": 8931,
+          "selected": 5598,
+          "keep": 100690,
+          "damaged": 163
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh45-w1108",
+        "sourcePage": "zh45",
+        "split": "test",
+        "revision": 3,
+        "elapsed": 52163.39500001073,
+        "before": {
+          "hand": 13892,
+          "selected": 3151,
+          "keep": 85478,
+          "damaged": 580
+        },
+        "after": {
+          "hand": 13892,
+          "selected": 3754,
+          "keep": 85478,
+          "damaged": 21
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh46-w1108",
+        "sourcePage": "zh46",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 46079.464999973774,
+        "before": {
+          "hand": 6577,
+          "selected": 459,
+          "keep": 101360,
+          "damaged": 242
+        },
+        "after": {
+          "hand": 6577,
+          "selected": 5225,
+          "keep": 101360,
+          "damaged": 164
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh47-w1108",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "revision": 3,
+        "elapsed": 32114.869999974966,
+        "before": {
+          "hand": 9844,
+          "selected": 2974,
+          "keep": 89901,
+          "damaged": 211
+        },
+        "after": {
+          "hand": 9844,
+          "selected": 4883,
+          "keep": 89901,
+          "damaged": 130
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh38-blank-w1108",
+        "sourcePage": "zh38",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 46125.210000008345,
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 376971,
+          "damaged": 3697
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 376971,
+          "damaged": 151
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh39-blank-w1058",
+        "sourcePage": "zh39",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 46928.989999979734,
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 256233,
+          "damaged": 10179
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 256233,
+          "damaged": 291
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh44-blank-w1059",
+        "sourcePage": "zh44",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 50340.97999998927,
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 402528,
+          "damaged": 8765
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 402528,
+          "damaged": 84
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh45-blank-w1079",
+        "sourcePage": "zh45",
+        "split": "test",
+        "revision": 3,
+        "elapsed": 35709.55000001192,
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 325389,
+          "damaged": 19235
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 325389,
+          "damaged": 44
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh46-blank-w1009",
+        "sourcePage": "zh46",
+        "split": "train",
+        "revision": 3,
+        "elapsed": 37859.27000001073,
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 411802,
+          "damaged": 5665
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 411802,
+          "damaged": 0
+        },
+        "outside": 0
+      },
+      {
+        "id": "zh47-blank-w1108",
+        "sourcePage": "zh47",
+        "split": "validation",
+        "revision": 3,
+        "elapsed": 39228.59500002861,
+        "before": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 300079,
+          "damaged": 9540
+        },
+        "after": {
+          "hand": 0,
+          "selected": 0,
+          "keep": 300079,
+          "damaged": 0
+        },
+        "outside": 0
+      }
+    ],
+    "errors": [],
+    "uploadRequests": []
+  },
+  "limitations": [
+    "Six Chinese/Zhuyin source pages from one workbook; no general accuracy claim",
+    "Ten earlier English pairs use imperfect third-party-cleaned weak references",
+    "Sparse registered labels exclude ambiguity; source page variants remain grouped",
+    "Development evaluation pages have been inspected; no blind test claim",
+    "English workbook mode retains revision 2; this model is an optional Chinese/Zhuyin experiment",
+    "Overlapping print, circles, dotted grids and faint strokes still need manual review",
+    "PHTI FCNN unchanged; repair uses local inpainting, not trained character generation"
+  ],
+  "runNotes": [
+    "One regional test timed out waiting for offline cache readiness while other heavy validation was active; isolated full region and migration rerun passed without production changes",
+    "Migration fixture originally authored 2026-11-03; rerun on this report date"
+  ],
+  "privacy": "Only learned numeric parameters, code, synthetic fixtures and aggregate metrics published; photos, annotations, drafts and generated photo results excluded",
+  "deployment": {
+    "status": "pending"
+  }
+}

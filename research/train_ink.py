@@ -15,10 +15,17 @@ from sklearn.metrics import precision_score, recall_score
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=Path)
+    parser.add_argument('--trees', type=int, default=120, choices=range(1, 201))
+    parser.add_argument('--depth', type=int, default=3, choices=range(1, 9))
+    parser.add_argument('--balance-pages', action='store_true')
     args = parser.parse_args()
     source = args.dataset / 'features.json'
     data = json.loads(source.read_text('utf-8'))
     rows = [r for r in data['records'] if r['label'] is not None]
+    groups = {}
+    for r in data['records']:
+        groups.setdefault(r.get('sourcePage', r['page']), set()).add(r['split'])
+    assert all(len(splits) == 1 for splits in groups.values()), 'Source page variants cross dataset splits'
     train = [r for r in rows if r['split'] == 'train']
     x = np.array([r['features'] for r in train])
     y = np.array([r['label'] for r in train])
@@ -29,10 +36,17 @@ def main():
     weights = np.array([np.sqrt(min(r['size'], 300)) for r in train])
     # Explicitly confirmed printed exemplars carry more evidence than weak pair labels.
     weights *= np.array([12 if r.get('confirmedKeep', 0) >= 5 and r['label'] == 0 else 1 for r in train])
+    if args.balance_pages:
+        source_groups = np.array([r.get('sourcePage', r['page']) for r in train])
+        for group in np.unique(source_groups):
+            for cls in [0, 1]:
+                selected = (source_groups == group) & (y == cls)
+                if selected.any():
+                    weights[selected] /= weights[selected].sum()
     for cls in [0, 1]:
         weights[y == cls] /= weights[y == cls].sum()
     weights *= len(weights) / 2
-    model = GradientBoostingClassifier(n_estimators=120, learning_rate=.08, max_depth=3, min_samples_leaf=5, random_state=20261102)
+    model = GradientBoostingClassifier(n_estimators=args.trees, learning_rate=.08, max_depth=args.depth, min_samples_leaf=5, random_state=20261102)
     model.fit(x, y, sample_weight=weights)
     trees = []
     for estimator in model.estimators_[:, 0]:
@@ -40,19 +54,29 @@ def main():
         trees.append([[int(t.feature[i]), float(t.threshold[i]), int(t.children_left[i]), int(t.children_right[i]), float(t.value[i,0,0])*model.learning_rate] for i in range(t.node_count)])
     prior = model.init_.class_prior_[1]
     exported = {'version': 1, 'kind': 'gradient-boosted-component-classifier', 'featureNames': data['names'], 'bias': float(np.log(prior/(1-prior))), 'trees': trees, 'threshold': .9, 'training': {'pages': pages, 'labeledComponents': len(train), 'positiveComponents': int(y.sum()), 'source': 'ten local third-party comparison pairs; sparse reviewed weak labels', 'seed': 20261102, 'featureDataSha256': hashlib.sha256(source.read_bytes()).hexdigest()}, 'limitations': ['Small English workbook dataset; not a general Chinese/Zhuyin model', 'Comparison outputs contain defects and are not clean ground truth', 'Cannot infer hidden original printed pixels']}
+    if 'provenance' in data:
+        exported['training']['source'] = data['provenance']['source']
+        exported['limitations'] = data['provenance']['limitations']
+    exported['training']['sourceGroups'] = {split: sorted(g for g, splits in groups.items() if split in splits) for split in ['train', 'validation', 'test']}
+    exported['training']['parameters'] = {'trees': args.trees, 'depth': args.depth, 'learningRate': .08, 'minSamplesLeaf': 5, 'balanceSourcePages': args.balance_pages}
     # Independent export evaluator verifies every sample, including unused candidates.
-    def infer(features):
-        score = exported['bias']
-        for tree in trees:
-            i = 0
-            while tree[i][0] >= 0:
-                f, threshold, left, right, _ = tree[i]
-                i = left if np.float32(features[f]) <= threshold else right
-            score += tree[i][4]
-        return 1/(1+np.exp(-score))
     all_x = np.array([r['features'] for r in data['records']])
     probabilities = model.predict_proba(all_x)[:,1]
-    export_values = np.array([infer(r) for r in all_x])
+    # sklearn rounds inputs to float32 but compares against double thresholds, as JS Math.fround does.
+    export_x = all_x.astype(np.float32).astype(np.float64)
+    logits = np.full(len(all_x), exported['bias'])
+    for tree in trees:
+        t = np.array(tree)
+        nodes = np.zeros(len(all_x), dtype=int)
+        for _ in range(args.depth + 1):
+            active = np.flatnonzero(t[nodes, 0] >= 0)
+            if not len(active):
+                break
+            f, threshold, left, right, _ = t[nodes[active]].T
+            nodes[active] = np.where(export_x[active, f.astype(int)] <= threshold, left, right).astype(int)
+        assert np.all(t[nodes, 0] < 0)
+        logits += t[nodes, 4]
+    export_values = 1/(1+np.exp(-logits))
     assert np.max(np.abs(export_values-probabilities)) < 1e-10
     scores = {}
     reports = []

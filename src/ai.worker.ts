@@ -3,12 +3,13 @@ import wasmModuleUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-th
 import wasmBinaryUrl from '../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
 import { sauvola } from './core';
 import { refineInk } from './refine';
-import { analyseWorkbook, validateWorkbookModel, WORKBOOK_MODEL_REVISION } from './workbook';
+import { analyseWorkbook, validateWorkbookModel, WORKBOOK_MODEL_REVISION, ZHUYIN_MODEL_REVISION } from './workbook';
+import {analyseZhuyin,validateZhuyinModel} from './zhuyin';
 ort.env.wasm.wasmPaths = { mjs: wasmModuleUrl, wasm: wasmBinaryUrl };
 ort.env.wasm.numThreads = 1;
 let session: ort.InferenceSession | undefined;
 function positions(length: number) { const out = [0]; while (out.at(-1)! + 256 < length) out.push(Math.min(out.at(-1)! + 246, length - 256)); return out; }
-self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
+self.onmessage = async ({ data: {image,zhuyin} }: MessageEvent<{image:ImageData;zhuyin:boolean}>) => {
   try {
     const progress = (percent: number, message: string) => self.postMessage({ type: 'progress', percent, message });
     if (!session) {
@@ -43,12 +44,12 @@ self.onmessage = async ({ data: image }: MessageEvent<ImageData>) => {
     for (let i = 0; i < n; i++) { handwriting[i] /= weights[i] || 1; print[i] /= weights[i] || 1; }
     progress(97, '正在補齊筆畫、辨識答案區與保護底線…');
     const hints = refineInk(image, { handwriting, print }, binary);
-    progress(99, '正在辨識淡鉛筆與課本印刷內容…');
-    const response=await fetch(`${import.meta.env.BASE_URL}models/workbook-ink-v2.json`);
+    progress(99, zhuyin?'正在逐筆分辨注音答案與印刷內容…':'正在辨識淡鉛筆與課本印刷內容…');
+    const response=await fetch(`${import.meta.env.BASE_URL}models/${zhuyin?'zhuyin-ink-v1.json':'workbook-ink-v2.json'}`);
     if(!response.ok)throw new Error('課本補強模型尚未下載完成，請連線後重試。');
-    const model=validateWorkbookModel(await response.json());
-    if(model.revision!==WORKBOOK_MODEL_REVISION)throw new Error('課本模型版本尚未更新，請重新連線下載。');
-    const workbook=analyseWorkbook(image,{handwriting,print},binary,model);
+    const model=(zhuyin?validateZhuyinModel:validateWorkbookModel)(await response.json());
+    if(model.revision!==(zhuyin?ZHUYIN_MODEL_REVISION:WORKBOOK_MODEL_REVISION))throw new Error('課本模型版本尚未更新，請重新連線下載。');
+    const workbook=(zhuyin?analyseZhuyin:analyseWorkbook)(image,{handwriting,print},binary,model);
     self.postMessage({ type: 'result', handwriting, print, hints, workbook, elapsed: performance.now() - start, tiles: total }, [handwriting.buffer, print.buffer, hints.confidence.buffer, hints.colorInk.buffer, hints.answerInk.buffer, hints.handInk.buffer, hints.boldInk.buffer, hints.printInk.buffer, hints.picture.buffer, hints.structure.buffer, hints.lineRepair.buffer,workbook.confidence.buffer,workbook.keep.buffer,workbook.lines.buffer,workbook.crossings.buffer]);
   } catch (error) { self.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };

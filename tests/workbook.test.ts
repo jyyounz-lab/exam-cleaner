@@ -5,10 +5,39 @@ import vm from 'node:vm';
 import {inkFeatureNames} from '../src/inkFeatures.ts';
 import {analyseWorkbook,validateWorkbookModel,workbookScore,type WorkbookModel} from '../src/workbook.ts';
 import {composeMask,initialEdit,sauvola} from '../src/core.ts';
+import {pixelFeatures,pixelFeatureNames} from '../src/pixelFeatures.ts';
+import {analyseZhuyin,validateZhuyinModel} from '../src/zhuyin.ts';
 
 const certain:WorkbookModel={version:1,featureNames:inkFeatureNames,bias:8,trees:[[[-2,0,-1,-1,0]]]};
 const image=(w=800,h=800)=>({width:w,height:h,data:new Uint8ClampedArray(w*h*4).fill(255)});
 const prediction=(n:number)=>({handwriting:new Float32Array(n),print:new Float32Array(n)});
+
+test('注音像素模型格式、局部特徵與模型切換隔離',()=>{
+  const model=validateZhuyinModel(JSON.parse(fs.readFileSync('public/models/zhuyin-ink-v1.json','utf8')));
+  assert.equal(model.revision,3);assert.equal(model.trees.length,160);assert.equal(model.featureNames.length,37);
+  assert.throws(()=>validateWorkbookModel(model));assert.throws(()=>validateZhuyinModel(certain));
+  const img=image(20,20),raw=prediction(400),contrast=new Float32Array(400).fill(10);
+  const features=pixelFeatures(0,new Array(27).fill(0),img,raw,contrast);
+  assert.equal(features.length,37);assert.equal(features[34],10);assert.equal(features[35],10);assert.ok(features.every(Number.isFinite));
+  const hints={version:1 as const,modelRevision:3,confidence:new Uint8Array(400).fill(255),keep:new Uint8Array(400),lines:new Uint8Array(400),crossings:new Uint8Array(400)};
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'workbook'},{...raw,workbook:hints}).count,0);
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'zhuyin'},{...raw,workbook:hints}).count,400);
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'zhuyin'},{...raw,workbook:{...hints,modelRevision:2}}).count,0);
+  const cached={...raw,workbook:hints,workbooks:{2:{...hints,modelRevision:2,confidence:new Uint8Array(400)},3:hints}};
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'workbook'},cached).count,0);
+  assert.equal(composeMask(img,{...initialEdit(),inkType:'zhuyin'},cached).count,400,'undo/redo mode changes can reuse both cached results');
+});
+
+test('逐像素判斷能分開相連筆畫，保留深色印刷與框線',()=>{
+  const img=image(200,200),raw=prediction(40000);
+  for(let y=70;y<110;y++)for(let x=60;x<66;x++)img.data.set([25,25,25,255],(y*200+x)*4);
+  for(let x=66;x<100;x++)for(let d=0;d<3;d++)img.data.set([150,150,150,255],((87+Math.floor((x-66)/2)+d)*200+x)*4);
+  const model:WorkbookModel={version:1,revision:3,featureNames:pixelFeatureNames,bias:0,trees:[[[28,90,1,2,0],[-2,0,0,0,-8],[-2,0,0,0,8]]]};
+  const hints=analyseZhuyin(img,raw,sauvola(img),model),mask=composeMask(img,{...initialEdit(),inkType:'zhuyin',threshold:.96},{...raw,workbook:hints}).mask;
+  assert.equal(mask[95*200+80],255);assert.equal(mask[88*200+63],0);assert.equal(mask[88*200+65],0,'growth must preserve attached dark print');
+  const restored=composeMask(img,{...initialEdit(),inkType:'zhuyin',threshold:.96,strokes:[{tool:'restore-region',rect:{x:.35,y:.4,w:.2,h:.1}}]},{...raw,workbook:hints});
+  assert.equal(restored.mask[95*200+80],0);
+});
 
 test('訓練模型格式與節點驗證，拒絕循環和非有限值',()=>{
   const model=validateWorkbookModel(JSON.parse(fs.readFileSync('public/models/workbook-ink-v2.json','utf8')));

@@ -1,13 +1,21 @@
 import { inkFeatures, inkFeatureNames } from './inkFeatures.ts';
 type Pixels = {width:number;height:number;data:Uint8ClampedArray};
 export const WORKBOOK_MODEL_REVISION = 2;
+export const ZHUYIN_MODEL_REVISION = 3;
+export const isWorkbookMode = (mode:string) => mode==='workbook'||mode==='zhuyin';
+export const workbookRevision = (mode:string) => mode==='zhuyin'?ZHUYIN_MODEL_REVISION:WORKBOOK_MODEL_REVISION;
 export type WorkbookHints = {version:1;modelRevision?:number;confidence:Uint8Array;keep:Uint8Array;lines:Uint8Array;crossings:Uint8Array};
+export function workbookHints(ai:{workbook?:WorkbookHints;workbooks?:Record<number,WorkbookHints>}|null|undefined,mode:string):WorkbookHints|undefined {
+  if(!isWorkbookMode(mode))return;
+  const current=ai?.workbooks?.[workbookRevision(mode)]??ai?.workbook;
+  return (mode==='zhuyin'?current?.modelRevision===ZHUYIN_MODEL_REVISION:current?.modelRevision!==ZHUYIN_MODEL_REVISION)?current:undefined;
+}
 type TreeNode = [number,number,number,number,number];
 export type WorkbookModel = {version:1;revision?:number;featureNames:string[];bias:number;trees:TreeNode[][]};
 
-export function validateWorkbookModel(value:unknown):WorkbookModel {
+export function validateWorkbookModel(value:unknown,featureNames=inkFeatureNames):WorkbookModel {
   const m=value as WorkbookModel;
-  if(!m||m.version!==1||JSON.stringify(m.featureNames)!==JSON.stringify(inkFeatureNames)||!Number.isFinite(m.bias)||!Array.isArray(m.trees)||!m.trees.length||m.trees.length>200)throw new Error('課本補強模型格式不符，請重新下載。');
+  if(!m||m.version!==1||JSON.stringify(m.featureNames)!==JSON.stringify(featureNames)||!Number.isFinite(m.bias)||!Array.isArray(m.trees)||!m.trees.length||m.trees.length>200)throw new Error('課本補強模型格式不符，請重新下載。');
   if(m.revision!==undefined&&(!Number.isInteger(m.revision)||m.revision<1))throw new Error('課本補強模型版本不符。');
   for(const tree of m.trees){
     if(!Array.isArray(tree)||!tree.length||tree.length>1024)throw new Error('課本補強模型樹狀資料不符。');
@@ -15,7 +23,7 @@ export function validateWorkbookModel(value:unknown):WorkbookModel {
       const node=tree[i];
       if(!Array.isArray(node)||node.length!==5||node.some(v=>!Number.isFinite(v)))throw new Error('課本補強模型包含無效數值。');
       const [feature,,left,right]=node;
-      if(!Number.isInteger(feature)||feature < -2||feature>=inkFeatureNames.length||feature>=0&&(!Number.isInteger(left)||!Number.isInteger(right)||left<=i||right<=i||left>=tree.length||right>=tree.length))throw new Error('課本補強模型節點不符。');
+      if(!Number.isInteger(feature)||feature < -2||feature>=featureNames.length||feature>=0&&(!Number.isInteger(left)||!Number.isInteger(right)||left<=i||right<=i||left>=tree.length||right>=tree.length))throw new Error('課本補強模型節點不符。');
     }
   }
   return m;
@@ -60,7 +68,7 @@ function checkboxFrames(w:number,h:number,contrast:Float32Array):Uint8Array {
 
 export function analyseWorkbook(image:Pixels, prediction:{handwriting:Float32Array;print:Float32Array}, binary:Uint8Array, model:WorkbookModel):WorkbookHints {
   const {width:w,height:h}=image,n=w*h,{components,queue,contrast,lines}=inkFeatures(image,prediction,binary);
-  const confidence=new Uint8Array(n),keep=new Uint8Array(n),frames=checkboxFrames(w,h,contrast),crossings=new Uint8Array(n);
+  const confidence=new Uint8Array(n);
   const scores=components.map(c=>workbookScore(c.features,model));
   const printed=components.filter((c,i)=>scores[i]<.1&&c.features[5]>35&&c.features[2]>=8);
   for(let index=0;index<components.length;index++){
@@ -82,6 +90,11 @@ export function analyseWorkbook(image:Pixels, prediction:{handwriting:Float32Arr
     if(left&&right&&left+right>=3)continue;
     for(let q=c.start;q<c.end;q++)confidence[queue[q]]=Math.round(score*255);
   }
+  return finishWorkbookHints(w,h,contrast,lines,confidence,model.revision??1);
+}
+
+export function finishWorkbookHints(w:number,h:number,contrast:Float32Array,lines:Uint8Array,confidence:Uint8Array,revision:number,keepThreshold=128):WorkbookHints {
+  const n=w*h,keep=new Uint8Array(n),frames=checkboxFrames(w,h,contrast),crossings=new Uint8Array(n);
   for(let y=4;y<h-4;y++)for(let x=0;x<w;x++){
     const i=y*w+x;if(!lines[i]||frames[i])continue;
     let above=0,below=0;
@@ -89,11 +102,11 @@ export function analyseWorkbook(image:Pixels, prediction:{handwriting:Float32Arr
     const score=Math.min(above,below);
     if(score>=230){crossings[i]=1;confidence[i]=score;}
   }
-  for(let i=0;i<n;i++){if(frames[i])confidence[i]=0;keep[i]=Number(frames[i]||lines[i]&&!crossings[i]||contrast[i]>=7&&confidence[i]<128);}
+  for(let i=0;i<n;i++){if(frames[i])confidence[i]=0;keep[i]=Number(frames[i]||lines[i]&&!crossings[i]||contrast[i]>=7&&confidence[i]<keepThreshold);}
   // Protect the antialiased edges of retained print and coloured guidelines.
   const centers=keep.slice();
   for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)if(centers[y*w+x])for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
-    const j=(y+dy)*w+x+dx;if(contrast[j]>2&&confidence[j]<128)keep[j]=1;
+    const j=(y+dy)*w+x+dx;if(contrast[j]>2&&confidence[j]<keepThreshold)keep[j]=1;
   }
-  return {version:1,modelRevision:model.revision??1,confidence,keep,lines,crossings};
+  return {version:1,modelRevision:revision,confidence,keep,lines,crossings};
 }

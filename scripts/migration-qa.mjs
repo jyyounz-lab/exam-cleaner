@@ -52,7 +52,7 @@ try {
       await page.evaluate(async()=>{
         const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('practice-again',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
         const d=await new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
-        delete d.ai.workbook.modelRevision;d.ai.workbook.confidence.fill(255);
+        delete d.ai.workbooks;delete d.ai.workbook.modelRevision;d.ai.workbook.confidence.fill(255);
         await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put(d,'current');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);});db.close();
       });
       await page.reload();await page.getByRole('button',{name:/繼續編輯/}).click();

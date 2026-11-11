@@ -17,6 +17,8 @@ const metadata = JSON.parse(await readFile('dist/models/metadata.json', 'utf8'))
 assert.equal(createHash('sha256').update(await readFile(`dist/models/${metadata.file}`)).digest('hex'), metadata.sha256);
 const workbookMetadata=JSON.parse(await readFile('dist/models/workbook-metadata.json','utf8'));
 assert.equal(createHash('sha256').update(await readFile(`dist/models/${workbookMetadata.file}`)).digest('hex'),workbookMetadata.sha256);
+const zhuyinMetadata=JSON.parse(await readFile('dist/models/zhuyin-metadata.json','utf8'));
+assert.equal(createHash('sha256').update(await readFile(`dist/models/${zhuyinMetadata.file}`)).digest('hex'),zhuyinMetadata.sha256);
 
 const events = {}, stored = [], removed = [];
 let cacheName, pending, offlineUrl;
@@ -40,6 +42,8 @@ for (const file of stored) {
 assert.ok(stored.includes(`${base}models/phti-fcnn.onnx`));
 assert.ok(stored.includes(`${base}models/${workbookMetadata.file}`));
 assert.equal(workbookMetadata.file,'workbook-ink-v2.json');
+assert.equal(zhuyinMetadata.file,'zhuyin-ink-v1.json');
+assert.ok(stored.includes(`${base}models/${zhuyinMetadata.file}`));
 assert.ok(stored.includes(`${base}cv.worker.v4.js`));
 assert.ok(stored.includes(`${base}vendor/opencv.js`));
 assert.ok(stored.some(file => file.endsWith('.wasm')));
@@ -48,4 +52,4 @@ assert.deepEqual(removed, [cacheName.replace(/[^-]+$/, 'previous')]);
 events.fetch({ request: { url: `https://example.test${base}`, method: 'GET', mode: 'navigate' }, respondWith(p) { pending = p; } });
 assert.equal((await pending).offline, true);
 assert.equal(offlineUrl, `${base}index.html`);
-console.log(`Build verified: ${base}, ${stored.length} cached files, both model hashes, scoped cache cleanup and offline fallback.`);
+console.log(`Build verified: ${base}, ${stored.length} cached files, all three model hashes, scoped cache cleanup and offline fallback.`);
