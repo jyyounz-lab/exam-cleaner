@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {inkFeatureNames} from '../src/inkFeatures.ts';
 import {analyseWorkbook,validateWorkbookModel,workbookScore,type WorkbookModel} from '../src/workbook.ts';
-import {composeMask,initialEdit,sauvola} from '../src/core.ts';
+import {composeMask,initialEdit,sauvola,selectRegion} from '../src/core.ts';
+import {DOTTED_RULE,markDottedRules} from '../src/dottedRules.ts';
 import {pixelFeatures,pixelFeatureNames} from '../src/pixelFeatures.ts';
 import {analyseZhuyin,validateZhuyinModel} from '../src/zhuyin.ts';
 
@@ -37,6 +38,64 @@ test('逐像素判斷能分開相連筆畫，保留深色印刷與框線',()=>{
   assert.equal(mask[95*200+80],255);assert.equal(mask[88*200+63],0);assert.equal(mask[88*200+65],0,'growth must preserve attached dark print');
   const restored=composeMask(img,{...initialEdit(),inkType:'zhuyin',threshold:.96,strokes:[{tool:'restore-region',rect:{x:.35,y:.4,w:.2,h:.1}}]},{...raw,workbook:hints});
   assert.equal(restored.mask[95*200+80],0);
+});
+
+test('切換與復原模式後，鉛筆框採用當前模型的導線與交叉證據',()=>{
+  const w=64,n=w*w,img=image(w,w),raw=prediction(n),i=32*w+32;
+  for(let y=20;y<45;y++)img.data.set([205,205,205,255],(y*w+32)*4);
+  const english={version:1 as const,modelRevision:2,confidence:new Uint8Array(n),keep:new Uint8Array(n),lines:new Uint8Array(n),crossings:new Uint8Array(n)};
+  english.lines[i]=3;
+  const chinese={...english,modelRevision:3,crossings:english.crossings.slice()};chinese.crossings[i]=1;
+  const ai={...raw,workbook:chinese,workbooks:{2:english,3:chinese}};
+  const rect={x:0,y:0,w:1,h:1};
+  for(const [mode,expected] of [['workbook',0],['zhuyin',255],['auto',255],['workbook',0]] as const) {
+    const stroke=selectRegion(img,{...initialEdit(),inkType:mode},rect,ai,'pencil');
+    assert.ok(stroke.tool==='region');assert.equal(stroke.mask[i],expected,mode);
+  }
+});
+
+test('鉛筆框補選深淺變化的手寫，保留同色印刷與手動保留區',()=>{
+  const w=80,n=w*w,img=image(w,w),raw=prediction(n),confidence=new Uint8Array(n);
+  for(const x of [20,40,60])for(let y=20;y<60;y++){
+    const i=y*w+x;
+    img.data.set([118,118,118,255],4*i);confidence[i]=242;
+    raw.handwriting[i]=x===40?.03:.97;raw.print[i]=x===40?.96:.01;
+  }
+  const workbook={version:1 as const,modelRevision:3,confidence,keep:new Uint8Array(n),lines:new Uint8Array(n),crossings:new Uint8Array(n)};
+  const stroke=selectRegion(img,{...initialEdit(),inkType:'zhuyin',threshold:.7,strokes:[{tool:'protect',radius:.04,points:[{x:.75,y:.5}]}]},{x:0,y:0,w:1,h:1},{...raw,workbook},'pencil');
+  assert.ok(stroke.tool==='region');assert.equal(stroke.mask[40*w+20],255);assert.equal(stroke.mask[40*w+40],0);assert.equal(stroke.mask[40*w+60],0);
+  const english=selectRegion(img,{...initialEdit(),inkType:'workbook',threshold:.7},{x:0,y:0,w:1,h:1},{...raw,workbook:{...workbook,modelRevision:2}},'pencil');
+  assert.ok(english.tool==='region');assert.equal(english.mask[40*w+20],0);
+});
+
+test('中文模式只補強兩項模型都有手寫證據的近門檻灰筆',()=>{
+  const w=180,img=image(w,w),raw=prediction(w*w);
+  for(const x of [40,100])for(let y=50;y<85;y++)for(let dx=0;dx<2;dx++){
+    const i=y*w+x+dx;img.data.set([205,205,205,255],4*i);
+    raw.handwriting[i]=x===40?.98:.24;raw.print[i]=x===40?.01:.68;
+  }
+  const nearThreshold:WorkbookModel={version:1,revision:3,featureNames:pixelFeatureNames,bias:Math.log(241/14),trees:[[[-2,0,-1,-1,0]]]};
+  const workbook=analyseZhuyin(img,raw,sauvola(img),nearThreshold);
+  const {mask}=composeMask(img,{...initialEdit(),inkType:'zhuyin',threshold:.96},{...raw,workbook});
+  assert.equal(mask[65*w+40],255);assert.equal(mask[65*w+100],0);
+});
+
+test('中文模式辨識連續等距虛線，保留旁邊的直筆畫與空隙供編輯',()=>{
+  const w=300,h=300,c=new Float32Array(w*h),lines=new Uint8Array(w*h);
+  for(let y=20;y<275;y++) {
+    const x=100+Math.round(y*.04);
+    if(y%4<2)c[y*w+x]=62;
+    c[y*w+160]=52;
+  }
+  markDottedRules(w,h,c,lines);
+  let protectedDashes=0;
+  for(let y=30;y<250;y++) {
+    const i=y*w+100+Math.round(y*.04);
+    if(y%4<2)protectedDashes+=Number(lines[i]===DOTTED_RULE);
+    else assert.equal(lines[i],0);
+    assert.equal(lines[y*w+160],0);
+  }
+  assert.ok(protectedDashes>=65);
 });
 
 test('訓練模型格式與節點驗證，拒絕循環和非有限值',()=>{

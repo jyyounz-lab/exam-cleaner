@@ -119,7 +119,11 @@ export function composeMask(image: { width: number; height: number; data: Uint8C
 export function selectRegion(image: { width: number; height: number; data: Uint8ClampedArray }, edit: Edit, rect: Rect, ai?: Parameters<typeof composeMask>[2], target: RegionTarget = 'none'): RegionStroke {
   const b=regionBounds(rect,image.width,image.height);
   const protections=edit.strokes.filter(s=>s.tool==='protect'||s.tool==='unprotect');
-  if(target!=='none')return {tool:'region',rect,imageWidth:image.width,imageHeight:image.height,mask:targetedRegionMask(image,b,target,edit,drawMasks(protections,image.width,image.height).keep,ai)};
+  if (target !== 'none') {
+    const prediction = ai && {...ai, workbook: workbookHints(ai, edit.inkType)};
+    const keep = protections.length ? drawMasks(protections, image.width, image.height).keep : undefined;
+    return {tool:'region', rect, imageWidth:image.width, imageHeight:image.height, mask:targetedRegionMask(image,b,target,edit,keep,prediction)};
+  }
   // Capture only this selection's accepted candidates; later settings and selections preserve earlier work.
   const selected=composeMask(image,{...edit,region:rect,strokes:protections},ai).mask;
   const mask=new Uint8Array(b.w*b.h);

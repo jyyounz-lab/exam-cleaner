@@ -1,4 +1,5 @@
 import { inkFeatures, inkFeatureNames } from './inkFeatures.ts';
+import { DOTTED_RULE } from './dottedRules.ts';
 type Pixels = {width:number;height:number;data:Uint8ClampedArray};
 export const WORKBOOK_MODEL_REVISION = 2;
 export const ZHUYIN_MODEL_REVISION = 3;
@@ -96,7 +97,7 @@ export function analyseWorkbook(image:Pixels, prediction:{handwriting:Float32Arr
 export function finishWorkbookHints(w:number,h:number,contrast:Float32Array,lines:Uint8Array,confidence:Uint8Array,revision:number,keepThreshold=128):WorkbookHints {
   const n=w*h,keep=new Uint8Array(n),frames=checkboxFrames(w,h,contrast),crossings=new Uint8Array(n);
   for(let y=4;y<h-4;y++)for(let x=0;x<w;x++){
-    const i=y*w+x;if(!lines[i]||frames[i])continue;
+    const i=y*w+x;if(!lines[i]||lines[i]===DOTTED_RULE||frames[i])continue;
     let above=0,below=0;
     for(let d=2;d<=4;d++)for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;above=Math.max(above,confidence[(y-d)*w+xx]);below=Math.max(below,confidence[(y+d)*w+xx]);}
     const score=Math.min(above,below);

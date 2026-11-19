@@ -1,14 +1,14 @@
 import type { InkHints } from './refine';
-import type { WorkbookHints } from './workbook';
+import { ZHUYIN_MODEL_REVISION, type WorkbookHints } from './workbook.ts';
 export type RegionTarget = 'none' | 'pencil' | 'red' | 'blue' | 'both';
 type Pixels = {width:number;height:number;data:Uint8ClampedArray};
 type Prediction = {handwriting:Float32Array;print:Float32Array;hints?:InkHints;workbook?:WorkbookHints};
 
 // shortcut: same-color print still needs small selections or manual protection until semantic region detection is available.
 // Explicit local selections use paper-relative ink, independent of the whole-page classifier's confidence floor.
-export function targetedRegionMask(image:Pixels,box:{x:number;y:number;w:number;h:number},target:Exclude<RegionTarget,'none'>,settings:{threshold:number;protectPrint:boolean;grow:boolean},keep:Uint8Array,ai?:Prediction|null) {
+export function targetedRegionMask(image:Pixels,box:{x:number;y:number;w:number;h:number},target:Exclude<RegionTarget,'none'>,settings:{threshold:number;protectPrint:boolean;grow:boolean},keep:Uint8Array|undefined,ai?:Prediction|null) {
   const {width:w,height:h,data}=image,n=w*h;
-  if(data.length!==n*4||keep.length!==n||ai&&(ai.print.length!==n||ai.handwriting.length!==n))throw new Error('框選分析尺寸與底圖不符。');
+  if(data.length!==n*4||keep&&keep.length!==n||ai&&(ai.print.length!==n||ai.handwriting.length!==n))throw new Error('框選分析尺寸與底圖不符。');
   const cell=Math.max(12,Math.round(Math.min(w,h)*24/1108)),cols=Math.ceil(w/cell),rows=Math.ceil(h/cell),paper=new Map<number,number[]>();
   const background=(cx:number,cy:number)=>{
     const key=cy*cols+cx;let value=paper.get(key);if(value)return value;
@@ -24,6 +24,7 @@ export function targetedRegionMask(image:Pixels,box:{x:number;y:number;w:number;
   for(let y=top;y<bottom;y++){let row=0;for(let x=left;x<right;x++){const p=(y*w+x)*4;row+=(data[p]+data[p+1]+data[p+2])/3;integral[(y-top+1)*stride+x-left+1]=integral[(y-top)*stride+x-left+1]+row;}}
   const size=box.w*box.h,ink=new Uint8Array(size),blocked=new Uint8Array(size),dark=new Uint8Array(size);
   const strict=Math.max(0,Math.min(1,(settings.threshold-.5)/.48)),minimum=3+strict*5,colorMinimum=5+strict*5;
+  const pencilConfidence = Math.max(230, Math.ceil(settings.threshold * 255));
   for(let y=0;y<box.h;y++)for(let x=0;x<box.w;x++){
     const xx=box.x+x,yy=box.y+y,i=yy*w+xx,j=y*box.w+x,p=i*4;
     const gx=Math.max(0,Math.min(cols-1,xx/cell-.5)),gy=Math.max(0,Math.min(rows-1,yy/cell-.5)),x0=Math.floor(gx),y0=Math.floor(gy),fx=gx-x0,fy=gy-y0;
@@ -35,13 +36,17 @@ export function targetedRegionMask(image:Pixels,box:{x:number;y:number;w:number;
     const neutral=Math.max(...rgb)-Math.min(...rgb)<18;
     const redHue=rgb[0]-rgb[1]>=(rgb[0]-rgb[2])*.45,blueHue=rgb[2]-rgb[1]>=(rgb[2]-rgb[0])*.4;
     const matchesColor=target==='red'?redHue&&red>0:target==='blue'?blueHue&&blue>0:redHue&&red>0||blueHue&&blue>0;
-    const selected=target==='pencil'?neutral&&strength<105:target==='red'?redHue&&red>=colorMinimum:target==='blue'?blueHue&&blue>=colorMinimum:redHue&&red>=colorMinimum||blueHue&&blue>=colorMinimum;
+    // A pencil box can include darker pressure marks when both models identify handwriting.
+    const supportedPencil = target === 'pencil' && neutral && strength < 165 && ai?.workbook?.modelRevision === ZHUYIN_MODEL_REVISION
+      && ai.workbook.confidence[i] >= pencilConfidence
+      && ai.handwriting[i] >= .65 && ai.print[i] < .2 && !ai.hints?.picture?.[i];
+    const selected=target==='pencil'?neutral&&(strength<105||supportedPencil):target==='red'?redHue&&red>=colorMinimum:target==='blue'?blueHue&&blue>=colorMinimum:redHue&&red>=colorMinimum||blueHue&&blue>=colorMinimum;
     ink[j]=Number(strength>=minimum&&contrast>=minimum&&selected);
-    dark[j]=Number(strength>110&&(target==='pencil'||neutral));
+    dark[j]=Number(strength>110&&!supportedPencil&&(target==='pencil'||neutral));
     const printed=!!ai&&(ai.print[i]>.85&&ai.handwriting[i]<.2||!!ai.hints?.picture?.[i]);
     const line=!!ai?.workbook?.lines[i]&&!ai.workbook.crossings[i]||!!ai?.hints?.structure[i]&&!ai.hints.lineRepair?.[i];
     // Growth must also respect other ink colors, including yellow and green printed borders.
-    blocked[j]=Number(!!keep[i]||!!line||!neutral&&(target==='pencil'||!matchesColor)||settings.protectPrint&&printed);
+    blocked[j]=Number(!!keep?.[i]||!!line||!neutral&&(target==='pencil'||!matchesColor)||settings.protectPrint&&printed);
   }
   // Keep the antialiased rim of dark printed glyphs out of local selections.
   if(settings.protectPrint)for(let y=0;y<box.h;y++)for(let x=0;x<box.w;x++)if(dark[y*box.w+x]){

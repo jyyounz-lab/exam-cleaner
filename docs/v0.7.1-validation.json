@@ -1,0 +1,234 @@
+{
+  "version": "0.7.1",
+  "date": "2026-11-19",
+  "comparedWith": "0.7.0",
+  "release": "locally validated",
+  "methodology": {
+    "data": "Six previously reviewed Chinese/Zhuyin answer pages paired with genuine blank originals. Native, 900px and 1500px sizes are variants of the same sources. The English regression uses ten previously reviewed sources at three sizes.",
+    "metrics": "Sparse registered ink pixels only: selected = labeled handwriting inside the erase mask; damaged = labeled print inside the erase mask. An annotated pixel is counted once per case. Counts are not whole-page or blind-test accuracy.",
+    "settings": {
+      "wholePage": "Chinese/Zhuyin, 96%, print protection, two-pixel growth, texture repair",
+      "boxes": "Preset sparse answer rectangles on each page, pencil at 70%, print protection and two-pixel growth. Rectangles are mapped by relative coordinates for blank controls. Masks are combined with that release’s whole-page result."
+    },
+    "change": "Keep all three deployed weight files. Reinforce near-threshold gray strokes supported by segmentation and the Chinese classifier. Protect regularly dashed vertical rulings. Supplement higher-pressure pencil inside explicit Chinese pencil boxes."
+  },
+  "nativeWholePage": {
+    "answered": {
+      "cases": 6,
+      "before": {
+        "selected": 27135,
+        "damaged": 847,
+        "hand": 49962,
+        "print": 585793
+      },
+      "after": {
+        "selected": 27675,
+        "damaged": 550,
+        "hand": 49962,
+        "print": 585793
+      }
+    },
+    "blank": {
+      "cases": 6,
+      "before": {
+        "selected": 0,
+        "damaged": 570,
+        "hand": 0,
+        "print": 2073002
+      },
+      "after": {
+        "selected": 0,
+        "damaged": 571,
+        "hand": 0,
+        "print": 2073002
+      }
+    },
+    "answeredPerPage": [
+      {
+        "page": 38,
+        "split": "train",
+        "handBefore": 3026,
+        "handAfter": 3026,
+        "printBefore": 307,
+        "printAfter": 63
+      },
+      {
+        "page": 39,
+        "split": "train",
+        "handBefore": 4649,
+        "handAfter": 4638,
+        "printBefore": 62,
+        "printAfter": 17
+      },
+      {
+        "page": 44,
+        "split": "train",
+        "handBefore": 5598,
+        "handAfter": 5829,
+        "printBefore": 163,
+        "printAfter": 155
+      },
+      {
+        "page": 45,
+        "split": "test",
+        "handBefore": 3754,
+        "handAfter": 4016,
+        "printBefore": 21,
+        "printAfter": 21
+      },
+      {
+        "page": 46,
+        "split": "train",
+        "handBefore": 5225,
+        "handAfter": 5271,
+        "printBefore": 164,
+        "printAfter": 164
+      },
+      {
+        "page": 47,
+        "split": "validation",
+        "handBefore": 4883,
+        "handAfter": 4895,
+        "printBefore": 130,
+        "printAfter": 130
+      }
+    ]
+  },
+  "resolutionRegression": {
+    "answered900": {
+      "cases": 6,
+      "before": {
+        "selected": 18059,
+        "damaged": 519,
+        "hand": 32818,
+        "print": 386270
+      },
+      "after": {
+        "selected": 18201,
+        "damaged": 487,
+        "hand": 32818,
+        "print": 386270
+      }
+    },
+    "answered1500": {
+      "cases": 6,
+      "before": {
+        "selected": 46995,
+        "damaged": 1615,
+        "hand": 91375,
+        "print": 1073504
+      },
+      "after": {
+        "selected": 50324,
+        "damaged": 1291,
+        "hand": 91375,
+        "print": 1073504
+      }
+    },
+    "blank900": {
+      "cases": 6,
+      "before": {
+        "selected": 0,
+        "damaged": 484,
+        "hand": 0,
+        "print": 1476004
+      },
+      "after": {
+        "selected": 0,
+        "damaged": 484,
+        "hand": 0,
+        "print": 1476004
+      }
+    },
+    "blank1500": {
+      "cases": 6,
+      "before": {
+        "selected": 0,
+        "damaged": 1037,
+        "hand": 0,
+        "print": 4103809
+      },
+      "after": {
+        "selected": 0,
+        "damaged": 1145,
+        "hand": 0,
+        "print": 4103809
+      }
+    },
+    "maximumAddedPrintedPixelsInOneCase": 65,
+    "englishWholePageBitIdentical": 30
+  },
+  "semiAutomatic": {
+    "answeredNativeBoxes": 86,
+    "answeredNativeBefore": {
+      "hand": 31655,
+      "printed": 10659
+    },
+    "answeredNativeAfter": {
+      "hand": 32648,
+      "printed": 9708
+    },
+    "answeredNativePreviousPencilRuleWithNewWholePageAndGuides": {
+      "hand": 32194,
+      "printed": 9658
+    },
+    "blankNativeBefore": {
+      "hand": 0,
+      "printed": 50179
+    },
+    "blankNativeAfter": {
+      "hand": 0,
+      "printed": 50080
+    }
+  },
+  "rejected": {
+    "model": "Trained a 48-feature experimental classifier. At the default 96% on native development page 45, labeled handwriting selected fell from 3,754 to 2,399 and labeled print selected rose from 21 to 128. It is excluded from the release.",
+    "geometry": "Broad diagonal expansion selected printed details on the blank controls."
+  },
+  "browser": {
+    "realNativeFullLocalInferenceAndRepair": 12,
+    "outsideMaskChanges": 0,
+    "realPageErrors": [],
+    "nonReadRequests": [],
+    "coreTests": 48,
+    "generalChecks": 36,
+    "regionChecks": 26,
+    "legacyChecks": 7,
+    "testedWidths": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "bundle": {
+      "cachedFiles": 23,
+      "modelHashesChecked": 3,
+      "base": "/exam-cleaner/"
+    }
+  },
+  "editor": {
+    "mobile390x844": {
+      "supplementButtonTopPx": {
+        "before": 2041,
+        "after": 308
+      },
+      "nextBoxSelectorTopPx": {
+        "before": 1591,
+        "after": 308
+      }
+    },
+    "desktop1440x960": {
+      "supplementButtonTopPx": {
+        "before": 1406,
+        "after": 311
+      }
+    },
+    "compare": "Mouse capture, touch release/cancellation, keyboard release/Escape and window blur restore the prior image or mask. A shortcut selects the next tool; earlier edits and global threshold persist.",
+    "savedDraft": "Existing revision 3 caches retain their saved output; explicit reanalysis uses the new recognition while retaining manual edits."
+  },
+  "limitations": [
+    "Source pages and labels have been inspected during development. Thin overlaps, solid dark connections and unlabelled print still need review. Lowering the threshold may increase print selection.",
+    "Some larger-size and blank variants select more print. Native page 39 selects slightly less handwriting.",
+    "Touch was checked in Chromium emulation. Physical phone performance and other textbooks were not measured."
+  ]
+}

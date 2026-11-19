@@ -12,3 +12,55 @@
 .region-list>div{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;border-bottom:1px solid var(--border)}.region-count{font-size:12px;color:var(--green);margin:12px 0}.panel-block>.button.full+.button.full{margin-top:8px}
 
 .region-targets{grid-template-columns:repeat(3,1fr)}.region-list>div>span:last-child{display:flex;gap:12px;flex-shrink:0}
+
+.review-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #f5f7f0;
+}
+.review-tools button, .next-box select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  color: var(--dark);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.review-tools button:hover:not(:disabled), .compare-button[aria-pressed="true"] { background: #dfeadd; }
+.compare-button { user-select: none; touch-action: none; }
+.review-actions, .next-box { display: flex; align-items: center; gap: 4px; }
+.next-box { font-size: 12px; color: #4e6555; gap: 8px; }
+.next-box select { border: 1px solid #a9baaa; background: var(--paper); min-width: 6.5em; }
+.controls select:focus-visible, .next-box select:focus-visible { outline: 3px solid #ba842c; outline-offset: 2px; }
+.canvas-toolbar .segmented button { font-size: 12px; color: #506351; min-height: 36px; }
+.canvas-toolbar .segmented .active { color: var(--dark); font-weight: 650; }
+.canvas-footer, .controls .small-note, .range-legend, .range-label span { color: #556954; }
+.range-label span, .zoom-label { font-variant-numeric: tabular-nums; }
+.region-list { max-height: 12rem; overflow: auto; }
+@media (min-width: 851px) and (min-height: 700px) {
+  .canvas-column { position: sticky; top: 12px; }
+}
+@media (max-width: 850px) {
+  .canvas-toolbar .segmented button, .undo-tools .icon-button, .review-tools button, .next-box select { min-height: 44px; }
+  .undo-tools .icon-button { min-width: 44px; }
+  .review-tools { padding: 3px 6px; gap: 2px; }
+  .board { min-height: 240px; height: 48dvh; }
+  .canvas-footer > span { font-size: 11px; }
+  .region-targets button, .brush-tools button, .region-list .text-button { min-height: 44px; }
+}
+@media (max-width: 430px) {
+  .review-tools button { font-size: 12px; padding-inline: 5px; gap: 4px; }
+  .canvas-toolbar { gap: 3px; padding: 4px; }
+  .canvas-toolbar .segmented button { font-size: 11px; padding-inline: 6px; }
+  .canvas-footer { row-gap: 3px; }
+}
